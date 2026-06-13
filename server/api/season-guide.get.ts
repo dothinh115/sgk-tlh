@@ -8,7 +8,7 @@ interface SeasonApiResponse {
   settings?: Record<string, unknown>
   season?: Record<string, string>
   seasons?: Array<Record<string, string>>
-  teams?: Array<Record<string, string>>
+  teams?: Array<Record<string, unknown>>
   message?: string
 }
 
@@ -123,7 +123,7 @@ function normalizeSeason(raw: Record<string, string>): SeasonSummary {
   }
 }
 
-function normalizeTeams(rows: Array<Record<string, string>>): SeasonTeam[] {
+function normalizeTeams(rows: Array<Record<string, unknown>>): SeasonTeam[] {
   return rows
     .map((row, index) => ({
       slug: clean(row.slug),
@@ -133,6 +133,8 @@ function normalizeTeams(rows: Array<Record<string, string>>): SeasonTeam[] {
       dataType: clean(row.dataType),
       name: clean(row.name),
       chineseNames: clean(row.chineseNames),
+      tier: clean(row.tier),
+      mentor: clean(row.mentor),
       sourceLevel: '',
       threadMentions: toNumber(row.threadMentions),
       commentMentions: toNumber(row.commentMentions),
@@ -146,11 +148,54 @@ function normalizeTeams(rows: Array<Record<string, string>>): SeasonTeam[] {
       analysis: '',
       objections: '',
       authorNotes: '',
-      notes: clean(row.tags),
-      sourceStatus: ''
+      notes: clean(row.note),
+      sourceStatus: '',
+      builds: normalizeBuilds(row.builds),
+      lineup: normalizeLineup(row.lineup)
     }))
     .filter(team => team.name)
     .sort((a, b) => a.rank - b.rank)
+}
+
+function normalizeBuilds(value: unknown) {
+  return Array.isArray(value)
+    ? value.map((row) => {
+        const item = record(row)
+
+        return {
+          id: clean(item.id),
+          name: clean(item.name),
+          status: clean(item.status),
+          idea: clean(item.idea),
+          source: clean(item.source)
+        }
+      }).filter(row => row.id || row.name)
+    : []
+}
+
+function normalizeLineup(value: unknown) {
+  return Array.isArray(value)
+    ? value.map((row) => {
+        const item = record(row)
+
+        return {
+          buildId: clean(item.buildId),
+          buildName: clean(item.buildName),
+          general: clean(item.general),
+          tactic1: clean(item.tactic1),
+          tactic2: clean(item.tactic2),
+          battleBook: clean(item.battleBook),
+          attribute: clean(item.attribute),
+          role: clean(item.role),
+          note: clean(item.note),
+          source: clean(item.source)
+        }
+      }).filter(row => row.buildId || row.general || row.tactic1 || row.tactic2)
+    : []
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : {}
 }
 
 function clean(value: unknown): string {

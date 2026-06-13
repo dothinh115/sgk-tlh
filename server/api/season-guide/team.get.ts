@@ -58,6 +58,8 @@ function normalizeTeam(row: Record<string, string>): SeasonTeam {
     dataType: clean(row.dataType),
     name: clean(row.name),
     chineseNames: clean(row.chineseNames),
+    tier: clean(row.tier),
+    mentor: clean(row.mentor),
     sourceLevel: '',
     threadMentions: toNumber(row.threadMentions),
     commentMentions: toNumber(row.commentMentions),
@@ -71,8 +73,10 @@ function normalizeTeam(row: Record<string, string>): SeasonTeam {
     analysis: '',
     objections: '',
     authorNotes: '',
-    notes: clean(row.tags),
-    sourceStatus: ''
+    notes: clean(row.note),
+    sourceStatus: '',
+    builds: [],
+    lineup: []
   }
 }
 

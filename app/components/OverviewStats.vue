@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   updatedAt: string
+  teamCount: number
 }>()
 </script>
 
@@ -18,7 +19,10 @@ defineProps<{
           Anh Hùng Mệnh Thế
         </h1>
         <p class="mt-2 max-w-2xl leading-7 text-muted">
-          Chọn đội trong danh sách bên dưới để mở hồ sơ: đội hình, chiến pháp, biến thể, điểm đồng thuận và phản biện chính.
+          Chọn đội trong danh sách bên dưới để xem tướng, chiến pháp, binh thư, cộng điểm, bái sư và ghi chú theo bảng mùa.
+        </p>
+        <p class="mt-3 text-sm font-medium text-primary">
+          {{ teamCount }} đội hình
         </p>
       </div>
 

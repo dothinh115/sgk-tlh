@@ -3,8 +3,9 @@ const isDevelopment = import.meta.dev
 const routeRules = isDevelopment
   ? {}
   : {
-      '/': { swr: 300 },
-      '/api/season-guide/*': { swr: 300 }
+      '/': { swr: 30 },
+      '/api/season-guide': { swr: 30 },
+      '/api/season-guide/*': { swr: 30 }
     }
 
 // https://nuxt.com/docs/api/configuration/nuxt-config

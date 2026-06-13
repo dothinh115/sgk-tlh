@@ -12,6 +12,8 @@ export interface SeasonTeam {
   dataType: string
   name: string
   chineseNames: string
+  tier: string
+  mentor: string
   sourceLevel: string
   threadMentions: number | null
   commentMentions: number | null
@@ -27,6 +29,8 @@ export interface SeasonTeam {
   authorNotes: string
   notes: string
   sourceStatus: string
+  builds: SeasonTeamBuild[]
+  lineup: SeasonTeamLineupRow[]
 }
 
 export interface TeamDetailTextBlock {

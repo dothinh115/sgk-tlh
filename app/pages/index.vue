@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SeasonGuidePayload, SeasonTeam, SeasonTeamDetail, SeasonTeamDetailPayload } from '../../shared/types/season-guide'
+import type { SeasonGuidePayload, SeasonTeam } from '../../shared/types/season-guide'
 import { teamId } from '../utils/season-guide'
 
 const config = useRuntimeConfig()
@@ -7,13 +7,10 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const selectedTeam = ref<SeasonTeam | null>(null)
-const selectedTeamDetail = ref<SeasonTeamDetail | null>(null)
-const detailPending = ref(false)
 const detailOpen = ref(false)
 const sidebarOpen = ref(false)
 const copiedTeamId = ref('')
 const seasonQuery = computed(() => queryValue(route.query.season))
-const loadedDetailKey = ref('')
 let copiedResetTimer: ReturnType<typeof setTimeout> | undefined
 
 const { data, error } = await useAsyncData<SeasonGuidePayload>('season-guide', () => {
@@ -25,31 +22,11 @@ const { data, error } = await useAsyncData<SeasonGuidePayload>('season-guide', (
 })
 
 const teams = computed(() => data.value?.teams ?? [])
-const stats = computed(() => data.value?.stats ?? [])
 const settings = computed(() => data.value?.settings)
 const isUpdating = computed(() => settings.value?.updating ?? false)
 const seasons = computed(() => data.value?.seasons ?? [])
 const activeSeasonSlug = computed(() => String(route.query.season || data.value?.activeSeasonSlug || seasons.value[0]?.slug || ''))
 const activeSeason = computed(() => seasons.value.find(season => season.slug === activeSeasonSlug.value))
-const publicStats = computed(() => stats.value.filter((stat) => {
-  const label = stat.label.toLowerCase()
-
-  return !label.includes('api') && !label.includes('cách đọc') && !label.includes('cách lọc')
-}))
-
-const topStats = computed(() => {
-  const allTeams = teams.value
-  const highTrust = allTeams.filter(team => team.reliability === 'cao').length
-  const doyuTeams = allTeams.filter(team => team.usesDoyu.includes('có')).length
-  const contestedTeams = allTeams.filter(team => (team.objectionPercent ?? 0) >= 20).length
-
-  return [
-    { label: 'Đội hình', value: allTeams.length.toString(), icon: 'i-lucide-users-round' },
-    { label: 'Độ tin cậy cao', value: highTrust.toString(), icon: 'i-lucide-shield-check' },
-    { label: 'Đội có đô úy', value: doyuTeams.toString(), icon: 'i-lucide-swords' },
-    { label: 'Đội tranh cãi', value: contestedTeams.toString(), icon: 'i-lucide-message-circle-warning' }
-  ]
-})
 
 const updatedAt = computed(() => {
   if (!data.value?.updatedAt) {
@@ -63,16 +40,10 @@ const updatedAt = computed(() => {
 })
 
 function openTeam(team: SeasonTeam) {
-  if (!selectedTeam.value || teamId(selectedTeam.value) !== teamId(team)) {
-    selectedTeamDetail.value = null
-    loadedDetailKey.value = ''
-  }
-
   selectedTeam.value = team
   detailOpen.value = true
   sidebarOpen.value = false
   syncTeamQuery(team)
-  void loadTeamDetail(team)
 }
 
 function syncTeamQuery(team: SeasonTeam) {
@@ -131,36 +102,6 @@ function buildTeamUrl(team: SeasonTeam) {
   return url.toString()
 }
 
-async function loadTeamDetail(team: SeasonTeam) {
-  if (!import.meta.client || !activeSeasonSlug.value) {
-    return
-  }
-
-  const detailKey = `${activeSeasonSlug.value}:${teamId(team)}`
-
-  if (loadedDetailKey.value === detailKey && selectedTeamDetail.value) {
-    return
-  }
-
-  detailPending.value = true
-  loadedDetailKey.value = detailKey
-
-  try {
-    const response = await $fetch<SeasonTeamDetailPayload>('/api/season-guide/team', {
-      query: {
-        season: activeSeasonSlug.value,
-        team: teamId(team)
-      }
-    })
-
-    if (selectedTeam.value && teamId(selectedTeam.value) === teamId(team)) {
-      selectedTeamDetail.value = response.detail
-    }
-  } finally {
-    detailPending.value = false
-  }
-}
-
 watch([teams, () => route.query.team], ([currentTeams, queryTeam]) => {
   if (!currentTeams.length || !queryTeam) {
     return
@@ -170,10 +111,7 @@ watch([teams, () => route.query.team], ([currentTeams, queryTeam]) => {
 
   if (match && (!selectedTeam.value || teamId(selectedTeam.value) !== teamId(match))) {
     selectedTeam.value = match
-    selectedTeamDetail.value = null
-    loadedDetailKey.value = ''
     detailOpen.value = true
-    void loadTeamDetail(match)
   }
 }, { immediate: true })
 
@@ -215,6 +153,7 @@ function queryValue(value: unknown): string {
 
         <OverviewStats
           :updated-at="updatedAt"
+          :team-count="teams.length"
         />
 
         <UAlert
@@ -253,11 +192,6 @@ function queryValue(value: unknown): string {
             title="Chưa có dữ liệu đội hình"
             description="API hiện chưa trả đội hình nào."
           />
-
-          <SourceStats
-            :summary-stats="topStats"
-            :stats="publicStats"
-          />
         </template>
       </div>
     </main>
@@ -292,8 +226,6 @@ function queryValue(value: unknown): string {
     <TeamDetailDrawer
       v-model:open="detailOpen"
       :team="selectedTeam"
-      :detail="selectedTeamDetail"
-      :pending="detailPending"
       :copied-team-id="copiedTeamId"
       @share-team="shareTeam"
     />
