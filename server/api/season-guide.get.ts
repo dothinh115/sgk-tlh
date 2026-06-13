@@ -17,7 +17,9 @@ export default defineEventHandler(async (event): Promise<SeasonGuidePayload> => 
   const source = config.seasonGuideSource as string
   const query = getQuery(event)
   const requestedSeason = clean(query.season)
-  const seasonsResponse = await $fetch<SeasonApiResponse>(source).catch(() => null)
+  const seasonsResponse = await $fetch<SeasonApiResponse>(appendQuery(source, {
+    mode: 'seasons'
+  })).catch(() => null)
 
   if (!seasonsResponse) {
     return updatingPayload()
