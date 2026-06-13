@@ -34,7 +34,7 @@ yarn build
 yarn preview
 ```
 
-Production deploy dùng PM2 với app name `sgk-tlh`, port `3006`, domain `mua18.thanglonghoi.xyz`.
+Production deploy dùng PM2 với app name `sgk-tlh`, port `3006`, domain `sgk.enfyra.io`.
 
 ## GitHub Actions Deploy
 
@@ -44,4 +44,4 @@ Workflow `.github/workflows/deploy.yml` cần các repository secrets:
 - `VPS_USER`: user SSH trên VPS.
 - `SSH_PRIVATE_KEY`: private key SSH có quyền deploy.
 
-Khi push vào `main`, workflow đồng bộ source lên `/apps/sgk-tlh`, chạy `yarn install`, `yarn build`, restart PM2, cấu hình nginx, và đăng ký HTTPS bằng certbot khi DNS của `mua18.thanglonghoi.xyz` đã trỏ về VPS.
+Khi push vào `main`, workflow đồng bộ source lên `/apps/sgk-tlh`, chạy `yarn install`, `yarn build`, restart PM2, cấu hình nginx, và đăng ký HTTPS bằng certbot khi DNS của `sgk.enfyra.io` đã trỏ về VPS.

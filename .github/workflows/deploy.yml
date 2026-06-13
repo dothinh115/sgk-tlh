@@ -63,7 +63,7 @@ jobs:
             export PROJECT_NAME="sgk-tlh"
             export APP_DIR="/apps/sgk-tlh"
             export APP_PORT="3006"
-            export APP_DOMAIN="mua18.thanglonghoi.xyz"
+            export APP_DOMAIN="sgk.enfyra.io"
             export CERT_EMAIL="dothinh115@gmail.com"
             export PATH="$PATH:/usr/bin:/usr/local/bin:$HOME/.local/bin"
 
@@ -111,7 +111,7 @@ jobs:
                 printf '%s\n' 'server {'
                 printf '%s\n' '  listen 80;'
                 printf '%s\n' '  listen [::]:80;'
-                printf '%s\n' '  server_name mua18.thanglonghoi.xyz;'
+                printf '%s\n' '  server_name sgk.enfyra.io;'
                 printf '%s\n' ''
                 printf '%s\n' '  location / {'
                 printf '%s\n' '    proxy_pass http://127.0.0.1:3006;'
@@ -129,25 +129,17 @@ jobs:
               nginx -t
               systemctl reload nginx
 
-              VPS_IPV4=$(curl -4 -fsS https://api.ipify.org || true)
-              DOMAIN_IPV4=$(getent ahostsv4 "$APP_DOMAIN" | awk '{ print $1; exit }' || true)
-
-              if [ -n "$VPS_IPV4" ] && [ "$DOMAIN_IPV4" = "$VPS_IPV4" ]; then
-                if ! command -v certbot >/dev/null 2>&1; then
-                  apt-get update
-                  DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
-                fi
-
-                certbot --nginx \
-                  --non-interactive \
-                  --agree-tos \
-                  --redirect \
-                  --email "$CERT_EMAIL" \
-                  -d "$APP_DOMAIN"
-              else
-                echo "Skipping HTTPS certificate: ${APP_DOMAIN} does not resolve to this VPS yet."
-                echo "Current VPS IPv4: ${VPS_IPV4:-unknown}; domain IPv4: ${DOMAIN_IPV4:-unresolved}"
+              if ! command -v certbot >/dev/null 2>&1; then
+                apt-get update
+                DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
               fi
+
+              certbot --nginx \
+                --non-interactive \
+                --agree-tos \
+                --redirect \
+                --email "$CERT_EMAIL" \
+                -d "$APP_DOMAIN"
             fi
 
             sleep 5
