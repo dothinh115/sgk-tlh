@@ -63,7 +63,7 @@ jobs:
             export PROJECT_NAME="sgk-tlh"
             export APP_DIR="/apps/sgk-tlh"
             export APP_PORT="3006"
-            export APP_DOMAIN="sgk.enfyra.io"
+            export APP_DOMAIN="mua18.thanglonghoi.xyz"
             export CERT_EMAIL="dothinh115@gmail.com"
             export PATH="$PATH:/usr/bin:/usr/local/bin:$HOME/.local/bin"
 
@@ -111,7 +111,7 @@ jobs:
                 printf '%s\n' 'server {'
                 printf '%s\n' '  listen 80;'
                 printf '%s\n' '  listen [::]:80;'
-                printf '%s\n' '  server_name sgk.enfyra.io;'
+                printf '%s\n' '  server_name mua18.thanglonghoi.xyz;'
                 printf '%s\n' ''
                 printf '%s\n' '  location / {'
                 printf '%s\n' '    proxy_pass http://127.0.0.1:3006;'
