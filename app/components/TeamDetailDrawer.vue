@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { SeasonTeam } from '../../shared/types/season-guide'
+import type { SeasonTeam, SeasonTeamDetail } from '../../shared/types/season-guide'
 import { badgeColor, paragraphs, percentText, teamId } from '../utils/season-guide'
 
-defineProps<{
+const props = defineProps<{
   team: SeasonTeam | null
+  detail: SeasonTeamDetail | null
+  pending: boolean
   copiedTeamId: string
 }>()
 
@@ -12,6 +14,19 @@ const emit = defineEmits<{
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
+
+const detailVariants = computed(() => props.detail?.variants ?? props.team?.variants.map(variant => ({
+  title: variant.general,
+  value: variant.tactics,
+  note: variant.alternatives.join('\n')
+})) ?? [])
+
+const alternatives = computed(() => props.detail?.alternatives ?? props.team?.alternatives ?? [])
+const analysisBlocks = computed(() => props.detail?.analysis ?? [
+  { title: 'Cách đội hoạt động', value: props.team?.analysis ?? '' },
+  { title: 'Phản biện cần đọc', value: props.team?.objections ?? '' }
+].filter(item => item.value))
+const authorNotes = computed(() => props.detail?.authorNotes ?? paragraphs(props.team?.authorNotes ?? ''))
 </script>
 
 <template>
@@ -107,96 +122,131 @@ const open = defineModel<boolean>('open', { default: false })
         </div>
 
         <div>
-          <section class="border-b border-default p-5 sm:p-6">
-            <h3 class="section-title">
-              Đội hình và chiến pháp
-            </h3>
-
-            <div class="mt-4 divide-y divide-default rounded-lg border border-default">
-              <div
-                v-for="variant in team.variants"
-                :key="`${variant.general}-${variant.tactics}`"
-                class="grid gap-2 p-4 sm:grid-cols-[150px_minmax(0,1fr)]"
-              >
-                <div class="font-semibold text-highlighted">
-                  {{ variant.general || 'Biến thể' }}
-                </div>
-                <div class="leading-6 text-default">
-                  {{ variant.tactics || 'Chưa đủ dữ liệu chiến pháp.' }}
+          <div
+            v-if="pending"
+            class="space-y-6 p-5 sm:p-6"
+          >
+            <section>
+              <div class="flex items-center gap-2">
+                <USkeleton class="h-4 w-1 rounded-full" />
+                <USkeleton class="h-6 w-48" />
+              </div>
+              <div class="mt-4 divide-y divide-default rounded-lg border border-default">
+                <div
+                  v-for="item in 3"
+                  :key="item"
+                  class="grid gap-3 p-4 sm:grid-cols-[150px_minmax(0,1fr)]"
+                >
+                  <USkeleton class="h-6 w-28" />
+                  <div class="space-y-2">
+                    <USkeleton class="h-5 w-full" />
+                    <USkeleton class="h-5 w-2/3" />
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section
-            v-if="team.analysis"
-            class="border-b border-default p-5 sm:p-6"
-          >
-            <h3 class="section-title">
-              Cách đội hoạt động
-            </h3>
-            <p
-              v-for="item in paragraphs(team.analysis)"
-              :key="item"
-              class="mt-3 leading-7 text-default"
+            <section
+              v-for="section in 3"
+              :key="section"
+              class="space-y-3"
             >
-              {{ item }}
-            </p>
-          </section>
+              <div class="flex items-center gap-2">
+                <USkeleton class="h-4 w-1 rounded-full" />
+                <USkeleton class="h-6 w-44" />
+              </div>
+              <div class="space-y-2">
+                <USkeleton class="h-5 w-full" />
+                <USkeleton class="h-5 w-full" />
+                <USkeleton class="h-5 w-5/6" />
+              </div>
+            </section>
+          </div>
 
-          <section
-            v-if="team.alternatives.length"
-            class="border-b border-default p-5 sm:p-6"
-          >
-            <h3 class="section-title">
-              Chiến pháp thay thế / tranh cãi
-            </h3>
-            <ul class="mt-3 space-y-2">
-              <li
-                v-for="item in team.alternatives"
+          <template v-else>
+            <section class="border-b border-default p-5 sm:p-6">
+              <h3 class="section-title">
+                Đội hình và chiến pháp
+              </h3>
+
+              <div class="mt-4 divide-y divide-default rounded-lg border border-default">
+                <div
+                  v-for="variant in detailVariants"
+                  :key="`${variant.title}-${variant.value}-${variant.note}`"
+                  class="grid gap-2 p-4 sm:grid-cols-[150px_minmax(0,1fr)]"
+                >
+                  <div class="font-semibold text-highlighted">
+                    {{ variant.title || 'Biến thể' }}
+                  </div>
+                  <div class="leading-6 text-default">
+                    {{ variant.value || 'Chưa đủ dữ liệu chiến pháp.' }}
+                  </div>
+                </div>
+
+                <div
+                  v-if="!detailVariants.length"
+                  class="p-4 text-sm text-muted"
+                >
+                  Chưa đủ dữ liệu chiến pháp.
+                </div>
+              </div>
+            </section>
+
+            <section
+              v-for="block in analysisBlocks"
+              :key="block.title"
+              class="border-b border-default p-5 sm:p-6"
+            >
+              <h3 class="section-title">
+                {{ block.title }}
+              </h3>
+              <p
+                v-for="item in paragraphs(block.value)"
                 :key="item"
-                class="flex gap-2 text-sm leading-6 text-muted"
+                class="mt-3 leading-7 text-default"
               >
-                <UIcon
-                  name="i-lucide-dot"
-                  class="mt-0.5 size-5 shrink-0 text-primary"
-                />
-                <span>{{ item }}</span>
-              </li>
-            </ul>
-          </section>
+                {{ item }}
+              </p>
+            </section>
 
-          <section
-            v-if="team.objections"
-            class="border-b border-default p-5 sm:p-6"
-          >
-            <h3 class="section-title">
-              Phản biện cần đọc
-            </h3>
-            <p
-              v-for="item in paragraphs(team.objections)"
-              :key="item"
-              class="mt-3 leading-7 text-muted"
+            <section
+              v-if="alternatives.length"
+              class="border-b border-default p-5 sm:p-6"
             >
-              {{ item }}
-            </p>
-          </section>
+              <h3 class="section-title">
+                Chiến pháp thay thế / tranh cãi
+              </h3>
+              <ul class="mt-3 space-y-2">
+                <li
+                  v-for="item in alternatives"
+                  :key="item"
+                  class="flex gap-2 text-sm leading-6 text-muted"
+                >
+                  <UIcon
+                    name="i-lucide-dot"
+                    class="mt-0.5 size-5 shrink-0 text-primary"
+                  />
+                  <span>{{ item }}</span>
+                </li>
+              </ul>
+            </section>
 
-          <section
-            v-if="team.authorNotes"
-            class="p-5 sm:p-6"
-          >
-            <h3 class="section-title">
-              Ghi nhận từ tác giả / thảo luận
-            </h3>
-            <p
-              v-for="item in paragraphs(team.authorNotes)"
-              :key="item"
-              class="mt-3 leading-7 text-muted"
+            <section
+              v-if="authorNotes.length"
+              class="p-5 sm:p-6"
             >
-              {{ item }}
-            </p>
-          </section>
+              <h3 class="section-title">
+                Ghi nhận từ tác giả / thảo luận
+              </h3>
+              <p
+                v-for="item in authorNotes"
+                :key="item"
+                class="mt-3 leading-7 text-muted"
+              >
+                {{ item }}
+              </p>
+            </section>
+          </template>
         </div>
       </div>
     </template>

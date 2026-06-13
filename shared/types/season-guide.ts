@@ -5,6 +5,8 @@ export interface TeamVariant {
 }
 
 export interface SeasonTeam {
+  slug: string
+  detailSheet: string
   rank: number
   group: string
   dataType: string
@@ -25,6 +27,31 @@ export interface SeasonTeam {
   authorNotes: string
   notes: string
   sourceStatus: string
+}
+
+export interface TeamDetailTextBlock {
+  title: string
+  value: string
+}
+
+export interface SeasonTeamDetail {
+  summary: Record<string, string>
+  variants: Array<{
+    title: string
+    value: string
+    note: string
+  }>
+  alternatives: string[]
+  analysis: TeamDetailTextBlock[]
+  authorNotes: string[]
+}
+
+export interface SeasonTeamDetailPayload {
+  ok: boolean
+  updatedAt: string
+  spreadsheetId: string
+  team: SeasonTeam
+  detail: SeasonTeamDetail
 }
 
 export interface CrawlStat {

@@ -12,7 +12,7 @@ interface SeasonApiResponse {
   message?: string
 }
 
-export default defineCachedEventHandler(async (event): Promise<SeasonGuidePayload> => {
+export default defineEventHandler(async (event): Promise<SeasonGuidePayload> => {
   const config = useRuntimeConfig()
   const source = config.seasonGuideSource as string
   const query = getQuery(event)
@@ -54,9 +54,6 @@ export default defineCachedEventHandler(async (event): Promise<SeasonGuidePayloa
   }
 
   return normalizeSeasonPayload(seasonResponse, settings, seasons)
-}, {
-  maxAge: 30,
-  swr: true
 })
 
 function normalizeSeasonPayload(response: SeasonApiResponse, settings: SeasonGuideSettings, seasons: SeasonSummary[]): SeasonGuidePayload {
@@ -127,6 +124,8 @@ function normalizeSeason(raw: Record<string, string>): SeasonSummary {
 function normalizeTeams(rows: Array<Record<string, string>>): SeasonTeam[] {
   return rows
     .map((row, index) => ({
+      slug: clean(row.slug),
+      detailSheet: clean(row.detailSheet),
       rank: toNumber(row.rank) ?? index + 1,
       group: clean(row.group),
       dataType: clean(row.dataType),
@@ -146,7 +145,7 @@ function normalizeTeams(rows: Array<Record<string, string>>): SeasonTeam[] {
       objections: '',
       authorNotes: '',
       notes: clean(row.tags),
-      sourceStatus: clean(row.detailSheet)
+      sourceStatus: ''
     }))
     .filter(team => team.name)
     .sort((a, b) => a.rank - b.rank)

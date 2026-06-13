@@ -11,7 +11,7 @@
 - The guide data is loaded through `server/api/season-guide.get.ts`.
 - The server route expects Google Apps Script API v2: `GET /exec` returns settings, seasons, active season, and a lightweight team list.
 - `settings.updating` controls the frontend update-state banner while the spreadsheet schema or guide data is being revised.
-- `/api/season-guide` uses short SWR caching for data refresh.
+- `/api/season-guide` and `/api/season-guide/team` are uncached while the Google Sheet schema is still changing; do not add API SWR until the sheet contract is stable.
 
 ## Theme And Layout
 - Nuxt UI primary color defaults to red and persists in `localStorage` under `thang-long-primary-color`.

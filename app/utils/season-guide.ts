@@ -1,6 +1,10 @@
 import type { SeasonTeam } from '../../shared/types/season-guide'
 
 export function teamId(team: SeasonTeam) {
+  if (team.slug) {
+    return team.slug
+  }
+
   return `doi-${team.rank}-${team.name}`
     .toLowerCase()
     .normalize('NFD')

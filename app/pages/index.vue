@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SeasonGuidePayload, SeasonTeam } from '../../shared/types/season-guide'
+import type { SeasonGuidePayload, SeasonTeam, SeasonTeamDetail, SeasonTeamDetailPayload } from '../../shared/types/season-guide'
 import { teamId } from '../utils/season-guide'
 
 const config = useRuntimeConfig()
@@ -7,20 +7,30 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const selectedTeam = ref<SeasonTeam | null>(null)
+const selectedTeamDetail = ref<SeasonTeamDetail | null>(null)
+const detailPending = ref(false)
 const detailOpen = ref(false)
 const sidebarOpen = ref(false)
 const copiedTeamId = ref('')
+const seasonQuery = computed(() => queryValue(route.query.season))
+const loadedDetailKey = ref('')
 let copiedResetTimer: ReturnType<typeof setTimeout> | undefined
 
-const { data, error } = await useFetch<SeasonGuidePayload>(config.public.seasonApiBase, {
-  key: 'season-guide',
-  server: true
+const { data, error } = await useAsyncData<SeasonGuidePayload>('season-guide', () => {
+  return $fetch(config.public.seasonApiBase, {
+    query: seasonQuery.value ? { season: seasonQuery.value } : undefined
+  })
+}, {
+  watch: [seasonQuery]
 })
 
 const teams = computed(() => data.value?.teams ?? [])
 const stats = computed(() => data.value?.stats ?? [])
 const settings = computed(() => data.value?.settings)
 const isUpdating = computed(() => settings.value?.updating ?? false)
+const seasons = computed(() => data.value?.seasons ?? [])
+const activeSeasonSlug = computed(() => String(route.query.season || data.value?.activeSeasonSlug || seasons.value[0]?.slug || ''))
+const activeSeason = computed(() => seasons.value.find(season => season.slug === activeSeasonSlug.value))
 const publicStats = computed(() => stats.value.filter((stat) => {
   const label = stat.label.toLowerCase()
 
@@ -53,17 +63,31 @@ const updatedAt = computed(() => {
 })
 
 function openTeam(team: SeasonTeam) {
+  if (!selectedTeam.value || teamId(selectedTeam.value) !== teamId(team)) {
+    selectedTeamDetail.value = null
+    loadedDetailKey.value = ''
+  }
+
   selectedTeam.value = team
   detailOpen.value = true
   sidebarOpen.value = false
   syncTeamQuery(team)
+  void loadTeamDetail(team)
 }
 
 function syncTeamQuery(team: SeasonTeam) {
+  const nextTeam = teamId(team)
+  const nextSeason = activeSeasonSlug.value || undefined
+
+  if (queryValue(route.query.team) === nextTeam && queryValue(route.query.season) === (nextSeason ?? '')) {
+    return
+  }
+
   router.replace({
     query: {
       ...route.query,
-      team: teamId(team)
+      season: nextSeason,
+      team: nextTeam
     }
   })
 }
@@ -99,8 +123,42 @@ async function shareTeam(team: SeasonTeam) {
 function buildTeamUrl(team: SeasonTeam) {
   const url = new URL(window.location.href)
 
+  if (activeSeasonSlug.value) {
+    url.searchParams.set('season', activeSeasonSlug.value)
+  }
+
   url.searchParams.set('team', teamId(team))
   return url.toString()
+}
+
+async function loadTeamDetail(team: SeasonTeam) {
+  if (!import.meta.client || !activeSeasonSlug.value) {
+    return
+  }
+
+  const detailKey = `${activeSeasonSlug.value}:${teamId(team)}`
+
+  if (loadedDetailKey.value === detailKey && selectedTeamDetail.value) {
+    return
+  }
+
+  detailPending.value = true
+  loadedDetailKey.value = detailKey
+
+  try {
+    const response = await $fetch<SeasonTeamDetailPayload>('/api/season-guide/team', {
+      query: {
+        season: activeSeasonSlug.value,
+        team: teamId(team)
+      }
+    })
+
+    if (selectedTeam.value && teamId(selectedTeam.value) === teamId(team)) {
+      selectedTeamDetail.value = response.detail
+    }
+  } finally {
+    detailPending.value = false
+  }
 }
 
 watch([teams, () => route.query.team], ([currentTeams, queryTeam]) => {
@@ -108,11 +166,14 @@ watch([teams, () => route.query.team], ([currentTeams, queryTeam]) => {
     return
   }
 
-  const match = currentTeams.find(team => teamId(team) === queryTeam)
+  const match = currentTeams.find(team => teamId(team) === queryValue(queryTeam))
 
-  if (match && selectedTeam.value !== match) {
+  if (match && (!selectedTeam.value || teamId(selectedTeam.value) !== teamId(match))) {
     selectedTeam.value = match
+    selectedTeamDetail.value = null
+    loadedDetailKey.value = ''
     detailOpen.value = true
+    void loadTeamDetail(match)
   }
 }, { immediate: true })
 
@@ -121,12 +182,18 @@ watch(detailOpen, (open) => {
     clearTeamQuery()
   }
 })
+
+function queryValue(value: unknown): string {
+  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
+}
 </script>
 
 <template>
   <div class="flex min-h-[calc(100vh-var(--ui-header-height))]">
     <SeasonSidebar
       :team-count="teams.length"
+      :seasons="seasons"
+      :active-season-slug="activeSeasonSlug"
     />
 
     <main class="min-w-0 flex-1">
@@ -213,7 +280,7 @@ watch(detailOpen, (open) => {
                 />
               </span>
               <span class="min-w-0 flex-1">
-                <span class="font-semibold">Anh Hùng Mệnh Thế</span>
+                <span class="font-semibold">{{ activeSeason?.name || 'Anh Hùng Mệnh Thế' }}</span>
                 <span class="mt-1 block text-sm text-primary/75">{{ teams.length }} đội hình</span>
               </span>
             </div>
@@ -225,6 +292,8 @@ watch(detailOpen, (open) => {
     <TeamDetailDrawer
       v-model:open="detailOpen"
       :team="selectedTeam"
+      :detail="selectedTeamDetail"
+      :pending="detailPending"
       :copied-team-id="copiedTeamId"
       @share-team="shareTeam"
     />

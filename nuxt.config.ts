@@ -1,3 +1,11 @@
+const isDevelopment = import.meta.dev
+
+const routeRules = isDevelopment
+  ? {}
+  : {
+      '/': { swr: 300 }
+    }
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
 
@@ -32,10 +40,7 @@ export default defineNuxtConfig({
       'https://script.google.com/macros/s/AKfycbz7D3W8Ut7iUCmVq-Ob-lu5__IixQI2P4d6IkJkwvXkPQATVB02BHH9tEsJlISebg0rqg/exec'
   },
 
-  routeRules: {
-    '/': { swr: 300 },
-    '/api/season-guide': { swr: 300 }
-  },
+  routeRules,
 
   compatibilityDate: '2025-01-15',
 
