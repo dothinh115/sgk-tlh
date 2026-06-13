@@ -12,31 +12,54 @@ interface SeasonApiResponse {
   message?: string
 }
 
-export default defineCachedEventHandler(async (): Promise<SeasonGuidePayload> => {
+export default defineCachedEventHandler(async (event): Promise<SeasonGuidePayload> => {
   const config = useRuntimeConfig()
   const source = config.seasonGuideSource as string
-  const response = await $fetch<SeasonApiResponse>(source).catch(() => null)
+  const query = getQuery(event)
+  const requestedSeason = clean(query.season)
+  const seasonsResponse = await $fetch<SeasonApiResponse>(source).catch(() => null)
 
-  if (!response) {
+  if (!seasonsResponse) {
     return updatingPayload()
   }
 
-  if (!response.ok) {
+  if (!seasonsResponse.ok) {
     throw createError({
       statusCode: 502,
-      statusMessage: response.message || 'Không đọc được dữ liệu mùa từ Google Sheets API.'
+      statusMessage: seasonsResponse.message || 'Không đọc được dữ liệu mùa từ Google Sheets API.'
     })
   }
 
-  const settings = normalizeSettings(response.settings ?? {})
-  const seasons = (response.seasons ?? [])
+  const settings = normalizeSettings(seasonsResponse.settings ?? {})
+  const seasons = (seasonsResponse.seasons ?? [])
     .map(normalizeSeason)
     .filter(season => season.slug)
 
-  if (!seasons.length) {
-    return updatingPayload(response)
+  if (seasonsResponse.mode === 'season') {
+    return normalizeSeasonPayload(seasonsResponse, settings, seasons)
   }
 
+  const selectedSeasonSlug = requestedSeason || settings.defaultSeasonSlug || seasons[0]?.slug
+
+  if (!selectedSeasonSlug) {
+    return updatingPayload(seasonsResponse)
+  }
+
+  const seasonResponse = await $fetch<SeasonApiResponse>(appendQuery(source, {
+    season: selectedSeasonSlug
+  })).catch(() => null)
+
+  if (!seasonResponse?.ok) {
+    return updatingPayload(seasonsResponse)
+  }
+
+  return normalizeSeasonPayload(seasonResponse, settings, seasons)
+}, {
+  maxAge: 30,
+  swr: true
+})
+
+function normalizeSeasonPayload(response: SeasonApiResponse, settings: SeasonGuideSettings, seasons: SeasonSummary[]): SeasonGuidePayload {
   const activeSeason = response.season ? normalizeSeason(response.season) : seasons.find(season => season.slug === settings.defaultSeasonSlug)
 
   return {
@@ -49,10 +72,7 @@ export default defineCachedEventHandler(async (): Promise<SeasonGuidePayload> =>
     teams: normalizeTeams(response.teams ?? []),
     stats: []
   }
-}, {
-  maxAge: 30,
-  swr: true
-})
+}
 
 function updatingPayload(response?: SeasonApiResponse): SeasonGuidePayload {
   return {
@@ -152,4 +172,14 @@ function toBoolean(value: unknown): boolean {
   const text = clean(value).toLowerCase()
 
   return ['true', '1', 'yes', 'y', 'on', 'đúng', 'bat', 'bật'].includes(text)
+}
+
+function appendQuery(source: string, params: Record<string, string>): string {
+  const url = new URL(source)
+
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value)
+  }
+
+  return url.toString()
 }
