@@ -19,6 +19,8 @@ const { data, error } = await useFetch<SeasonGuidePayload>(config.public.seasonA
 
 const teams = computed(() => data.value?.teams ?? [])
 const stats = computed(() => data.value?.stats ?? [])
+const settings = computed(() => data.value?.settings)
+const isUpdating = computed(() => settings.value?.updating ?? false)
 const publicStats = computed(() => stats.value.filter((stat) => {
   const label = stat.label.toLowerCase()
 
@@ -146,6 +148,19 @@ watch(detailOpen, (open) => {
 
         <OverviewStats
           :updated-at="updatedAt"
+        />
+
+        <UAlert
+          v-if="isUpdating"
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-refresh-cw"
+          :title="settings?.updatingTitle || 'Dữ liệu đang được cập nhật'"
+          :description="settings?.updatingMessage || 'Thăng Long Hội đang chỉnh lại dữ liệu mùa. Một số nội dung có thể thay đổi trong ít phút tới.'"
+          :ui="{
+            root: 'border border-warning/30 bg-warning/10',
+            icon: 'animate-spin'
+          }"
         />
 
         <UAlert

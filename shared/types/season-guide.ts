@@ -32,10 +32,30 @@ export interface CrawlStat {
   value: string
 }
 
+export interface SeasonGuideSettings {
+  updating: boolean
+  updatingTitle: string
+  updatingMessage: string
+  defaultSeasonSlug: string
+  apiVersion: number | null
+  lastUpdated: string
+}
+
+export interface SeasonSummary {
+  slug: string
+  prefix: string
+  name: string
+  title: string
+  status: string
+}
+
 export interface SeasonGuidePayload {
   ok: boolean
   updatedAt: string
   spreadsheetId: string
+  settings: SeasonGuideSettings
+  seasons: SeasonSummary[]
+  activeSeasonSlug: string
   teams: SeasonTeam[]
   stats: CrawlStat[]
 }
