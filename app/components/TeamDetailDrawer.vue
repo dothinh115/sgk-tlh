@@ -22,10 +22,10 @@ const detailVariants = computed(() => props.detail?.variants ?? props.team?.vari
 })) ?? [])
 
 const alternatives = computed(() => props.detail?.alternatives ?? props.team?.alternatives ?? [])
-const analysisBlocks = computed(() => props.detail?.analysis ?? [
+const analysisBlocks = computed(() => (props.detail?.analysis ?? [
   { title: 'Cách đội hoạt động', value: props.team?.analysis ?? '' },
   { title: 'Phản biện cần đọc', value: props.team?.objections ?? '' }
-].filter(item => item.value))
+]).filter(item => item.value.trim()))
 const authorNotes = computed(() => props.detail?.authorNotes ?? paragraphs(props.team?.authorNotes ?? ''))
 </script>
 
