@@ -7,6 +7,8 @@ interface TeamApiResponse {
   team?: Record<string, string>
   detail?: {
     summary?: Record<string, string>
+    builds?: Array<Record<string, string>>
+    lineup?: Array<Record<string, string>>
     variants?: Array<Record<string, string>>
     alternatives?: string[]
     analysis?: Array<Record<string, string>>
@@ -77,6 +79,25 @@ function normalizeTeam(row: Record<string, string>): SeasonTeam {
 function normalizeDetail(detail: TeamApiResponse['detail']): SeasonTeamDetail {
   return {
     summary: detail?.summary ?? {},
+    builds: (detail?.builds ?? []).map(row => ({
+      id: clean(row.id),
+      name: clean(row.name),
+      status: clean(row.status),
+      idea: clean(row.idea),
+      source: clean(row.source)
+    })).filter(row => row.id || row.name),
+    lineup: (detail?.lineup ?? []).map(row => ({
+      buildId: clean(row.buildId),
+      buildName: clean(row.buildName),
+      general: clean(row.general),
+      tactic1: clean(row.tactic1),
+      tactic2: clean(row.tactic2),
+      battleBook: clean(row.battleBook),
+      attribute: clean(row.attribute),
+      role: clean(row.role),
+      note: clean(row.note),
+      source: clean(row.source)
+    })).filter(row => row.buildId || row.general || row.tactic1 || row.tactic2),
     variants: (detail?.variants ?? []).map(row => ({
       title: clean(row.title),
       value: clean(row.value),

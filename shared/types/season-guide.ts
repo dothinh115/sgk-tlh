@@ -34,8 +34,31 @@ export interface TeamDetailTextBlock {
   value: string
 }
 
+export interface SeasonTeamBuild {
+  id: string
+  name: string
+  status: string
+  idea: string
+  source: string
+}
+
+export interface SeasonTeamLineupRow {
+  buildId: string
+  buildName: string
+  general: string
+  tactic1: string
+  tactic2: string
+  battleBook: string
+  attribute: string
+  role: string
+  note: string
+  source: string
+}
+
 export interface SeasonTeamDetail {
   summary: Record<string, string>
+  builds: SeasonTeamBuild[]
+  lineup: SeasonTeamLineupRow[]
   variants: Array<{
     title: string
     value: string

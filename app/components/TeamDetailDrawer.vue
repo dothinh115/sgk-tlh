@@ -20,6 +20,9 @@ const detailVariants = computed(() => props.detail?.variants ?? props.team?.vari
   value: variant.tactics,
   note: variant.alternatives.join('\n')
 })) ?? [])
+const structuredBuilds = computed(() => props.detail?.builds ?? [])
+const structuredLineup = computed(() => props.detail?.lineup ?? [])
+const hasStructuredLineup = computed(() => structuredLineup.value.length > 0)
 
 const alternatives = computed(() => props.detail?.alternatives ?? props.team?.alternatives ?? [])
 const analysisBlocks = computed(() => (props.detail?.analysis ?? [
@@ -169,7 +172,17 @@ const authorNotes = computed(() => props.detail?.authorNotes ?? paragraphs(props
                 Đội hình và chiến pháp
               </h3>
 
-              <div class="mt-4 divide-y divide-default rounded-lg border border-default">
+              <TeamBuilds
+                v-if="hasStructuredLineup"
+                class="mt-4"
+                :builds="structuredBuilds"
+                :lineup="structuredLineup"
+              />
+
+              <div
+                v-else
+                class="mt-4 divide-y divide-default rounded-lg border border-default"
+              >
                 <div
                   v-for="variant in detailVariants"
                   :key="`${variant.title}-${variant.value}-${variant.note}`"

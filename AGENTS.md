@@ -10,6 +10,7 @@
 ## Data
 - The guide data is loaded through `server/api/season-guide.get.ts`.
 - The server route expects Google Apps Script API v2: `GET /exec` returns settings, seasons, active season, and a lightweight team list.
+- Team detail should use structured `detail.builds` and `detail.lineup` when available. `detail.variants` is only a fallback for older sheet imports and should not be the primary UI contract.
 - `settings.updating` controls the frontend update-state banner while the spreadsheet schema or guide data is being revised.
 - `/api/season-guide` and `/api/season-guide/team` are uncached while the Google Sheet schema is still changing; do not add API SWR until the sheet contract is stable.
 
