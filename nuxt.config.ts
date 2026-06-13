@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   if (!colors[color]) return
   const style = document.createElement('style')
   style.id = 'thang-long-primary-color'
-  style.textContent = ':root{' + shades.map((shade, index) => '--ui-color-primary-' + shade + ':var(--color-' + color + '-' + shade + ',' + colors[color][index] + ')').join(';') + '}'
+  style.textContent = ':root{' + shades.map((shade, index) => '--ui-color-primary-' + shade + ':var(--color-' + color + '-' + shade + ',' + colors[color][index] + ')').join(';') + '}:root,.light{--ui-primary:var(--ui-color-primary-500)}.dark{--ui-primary:var(--ui-color-primary-400)}'
   document.head.appendChild(style)
 })()`,
           tagPosition: 'head',

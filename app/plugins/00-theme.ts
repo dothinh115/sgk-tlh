@@ -26,7 +26,6 @@ const primaryColors: PrimaryColorOption[] = [
 ]
 
 export default defineNuxtPlugin(() => {
-  const appConfig = useAppConfig()
   const current = useState<string>('primary-color', () => DEFAULT_PRIMARY_COLOR)
 
   function normalizePrimaryColor(value: string | null) {
@@ -37,7 +36,13 @@ export default defineNuxtPlugin(() => {
     const primary = normalizePrimaryColor(value)
 
     current.value = primary
-    appConfig.ui.colors.primary = primary
+    updateAppConfig({
+      ui: {
+        colors: {
+          primary
+        }
+      }
+    })
 
     if (import.meta.client) {
       localStorage.setItem(PRIMARY_COLOR_STORAGE_KEY, primary)
@@ -67,7 +72,7 @@ function updatePrimaryOverrideStyle(primary: string) {
     document.head.appendChild(style)
   }
 
-  style.textContent = `:root{${PRIMARY_SHADES.map(shade => `--ui-color-primary-${shade}:var(--color-${primary}-${shade})`).join(';')}}`
+  style.textContent = `:root{${PRIMARY_SHADES.map(shade => `--ui-color-primary-${shade}:var(--color-${primary}-${shade})`).join(';')}}:root,.light{--ui-primary:var(--ui-color-primary-500)}.dark{--ui-primary:var(--ui-color-primary-400)}`
 }
 
 declare module '#app' {
