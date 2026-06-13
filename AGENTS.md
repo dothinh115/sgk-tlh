@@ -9,10 +9,10 @@
 
 ## Data
 - The guide data is loaded through `server/api/season-guide.get.ts`.
-- The server route expects Google Apps Script API v2: `GET /exec` returns settings, seasons, active season, and a lightweight team list.
-- Team detail should use structured `detail.builds` and `detail.lineup` when available. `detail.variants` is only a fallback for older sheet imports and should not be the primary UI contract.
+- The server route expects Google Apps Script API v3: `GET /exec?season=<slug>` returns settings, seasons, active season, and all teams with `builds` and `lineup` already included.
+- Team detail drawer reads from the selected team in the list payload. Do not add a client-side team-detail fetch unless the spreadsheet contract changes again.
 - `settings.updating` controls the frontend update-state banner while the spreadsheet schema or guide data is being revised.
-- `/api/season-guide` and `/api/season-guide/team` are uncached while the Google Sheet schema is still changing; do not add API SWR until the sheet contract is stable.
+- Production route rules use `swr: 30` for `/`, `/api/season-guide`, and `/api/season-guide/*` so Google Sheet edits settle quickly.
 
 ## Theme And Layout
 - Nuxt UI primary color defaults to red and persists in `localStorage` under `thang-long-primary-color`.
@@ -23,6 +23,7 @@
 ## Team List
 - Team rows use `div role="button"` instead of `<button>` because each row contains a real share `UButton`; nested buttons break browser DOM layout.
 - Team detail state is stored in the `team` query param so refresh keeps the selected drawer open.
+- Team list rows should stay compact: rank, team name, tier, three general names, and share action. Detailed tactics, battle books, attributes, mentor, and notes belong in the drawer.
 
 ## Deployment
 - GitHub Actions deploys from `main` using `.github/workflows/deploy.yml`.

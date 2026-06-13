@@ -35,7 +35,8 @@ const updatedAt = computed(() => {
 
   return new Intl.DateTimeFormat('vi-VN', {
     dateStyle: 'medium',
-    timeStyle: 'short'
+    timeStyle: 'short',
+    timeZone: 'Asia/Ho_Chi_Minh'
   }).format(new Date(data.value.updatedAt))
 })
 
