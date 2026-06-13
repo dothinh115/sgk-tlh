@@ -1,0 +1,163 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+
+          : "${VPS_HOST:?VPS_HOST secret is required}"
+          : "${SSH_PRIVATE_KEY:?SSH_PRIVATE_KEY secret is required}"
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
+          ssh-keyscan -T 20 -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync source to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+
+          : "${VPS_USER:?VPS_USER secret is required}"
+
+          ssh "$VPS_USER@$VPS_HOST" 'mkdir -p /apps/sgk-tlh'
+          rsync -az --delete \
+            --exclude='.git' \
+            --exclude='.nuxt' \
+            --exclude='.output' \
+            --exclude='.nitro' \
+            --exclude='.cache' \
+            --exclude='node_modules' \
+            --exclude='logs' \
+            --exclude='*.log' \
+            ./ "$VPS_USER@$VPS_HOST:/apps/sgk-tlh/"
+
+      - name: Build and restart on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+
+          ssh "$VPS_USER@$VPS_HOST" <<'ENDSSH'
+            set -euo pipefail
+
+            export PROJECT_NAME="sgk-tlh"
+            export APP_DIR="/apps/sgk-tlh"
+            export APP_PORT="3006"
+            export APP_DOMAIN="mua18.thanglonghoi.xyz"
+            export CERT_EMAIL="dothinh115@gmail.com"
+            export PATH="$PATH:/usr/bin:/usr/local/bin:$HOME/.local/bin"
+
+            if ss -ltn | grep -Eq "(:|\.)${APP_PORT}\b"; then
+              if ! pm2 describe "$PROJECT_NAME" >/dev/null 2>&1; then
+                echo "Port ${APP_PORT} is already used by another process."
+                ss -ltnp | grep -E "(:|\.)${APP_PORT}\b" || true
+                exit 1
+              fi
+            fi
+
+            NPM_PATH=$(which npm || echo "/usr/bin/npm")
+            YARN_PATH=$(which yarn || echo "")
+            PM2_PATH=$(which pm2 || echo "$HOME/.local/bin/pm2")
+
+            if [ -z "$YARN_PATH" ]; then
+              "$NPM_PATH" install -g yarn
+              YARN_PATH=$(which yarn || echo "$HOME/.local/bin/yarn")
+            fi
+
+            if ! command -v pm2 >/dev/null 2>&1; then
+              "$NPM_PATH" install -g pm2
+              PM2_PATH=$(which pm2 || echo "$HOME/.local/bin/pm2")
+            fi
+
+            cd "$APP_DIR"
+            mkdir -p logs
+            rm -rf .output .nuxt .nitro
+
+            "$YARN_PATH" install --frozen-lockfile --network-timeout 600000
+            "$YARN_PATH" build
+
+            test -f .output/server/index.mjs || {
+              echo "Nuxt server entry is missing"
+              exit 1
+            }
+
+            "$PM2_PATH" stop "$PROJECT_NAME" || true
+            "$PM2_PATH" delete "$PROJECT_NAME" || true
+            "$PM2_PATH" start ecosystem.config.cjs
+            "$PM2_PATH" save
+
+            if command -v nginx >/dev/null 2>&1; then
+              {
+                printf '%s\n' 'server {'
+                printf '%s\n' '  listen 80;'
+                printf '%s\n' '  listen [::]:80;'
+                printf '%s\n' '  server_name mua18.thanglonghoi.xyz;'
+                printf '%s\n' ''
+                printf '%s\n' '  location / {'
+                printf '%s\n' '    proxy_pass http://127.0.0.1:3006;'
+                printf '%s\n' '    proxy_http_version 1.1;'
+                printf '%s\n' '    proxy_set_header Upgrade $http_upgrade;'
+                printf '%s\n' '    proxy_set_header Connection "upgrade";'
+                printf '%s\n' '    proxy_set_header Host $host;'
+                printf '%s\n' '    proxy_set_header X-Real-IP $remote_addr;'
+                printf '%s\n' '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
+                printf '%s\n' '    proxy_set_header X-Forwarded-Proto $scheme;'
+                printf '%s\n' '  }'
+                printf '%s\n' '}'
+              } > /etc/nginx/sites-available/sgk-tlh
+              ln -sf /etc/nginx/sites-available/sgk-tlh /etc/nginx/sites-enabled/sgk-tlh
+              nginx -t
+              systemctl reload nginx
+
+              VPS_IPV4=$(curl -4 -fsS https://api.ipify.org || true)
+              DOMAIN_IPV4=$(getent ahostsv4 "$APP_DOMAIN" | awk '{ print $1; exit }' || true)
+
+              if [ -n "$VPS_IPV4" ] && [ "$DOMAIN_IPV4" = "$VPS_IPV4" ]; then
+                if ! command -v certbot >/dev/null 2>&1; then
+                  apt-get update
+                  DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
+                fi
+
+                certbot --nginx \
+                  --non-interactive \
+                  --agree-tos \
+                  --redirect \
+                  --email "$CERT_EMAIL" \
+                  -d "$APP_DOMAIN"
+              else
+                echo "Skipping HTTPS certificate: ${APP_DOMAIN} does not resolve to this VPS yet."
+                echo "Current VPS IPv4: ${VPS_IPV4:-unknown}; domain IPv4: ${DOMAIN_IPV4:-unresolved}"
+              fi
+            fi
+
+            sleep 5
+            "$PM2_PATH" status
+
+            if ! "$PM2_PATH" show "$PROJECT_NAME" | grep -q "online"; then
+              "$PM2_PATH" logs "$PROJECT_NAME" --lines 80 --nostream
+              exit 1
+            fi
+
+            curl -fsS --max-time 10 "http://127.0.0.1:${APP_PORT}/" >/dev/null
+            "$PM2_PATH" logs "$PROJECT_NAME" --lines 20 --nostream || true
+          ENDSSH
