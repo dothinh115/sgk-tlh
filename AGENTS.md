@@ -14,8 +14,8 @@
 
 ## Theme And Layout
 - Nuxt UI primary color defaults to red and persists in `localStorage` under `thang-long-primary-color`.
-- `nuxt.config.ts` injects an early head script that applies the stored primary color before hydration to prevent a red-to-selected-color flash.
-- `app/plugins/00-theme.ts` provides `$primaryColor` and keeps the Nuxt UI app config plus the early CSS override in sync.
+- `app/plugins/00-theme.ts` provides `$primaryColor` and updates Nuxt UI through `updateAppConfig`.
+- Nuxt UI owns the `--ui-color-primary-*` and `--ui-primary` tokens. Do not add separate style tags or CSS variable overrides for primary colors because they conflict with Nuxt UI's light/dark token generation.
 - The app shell uses a fixed header, sticky left season sidebar, main content list, and a slideover drawer for team details.
 
 ## Team List
