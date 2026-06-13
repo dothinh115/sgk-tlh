@@ -90,6 +90,7 @@ export interface SeasonGuideSettings {
   updating: boolean
   updatingTitle: string
   updatingMessage: string
+  notice: string
   defaultSeasonSlug: string
   apiVersion: number | null
   lastUpdated: string

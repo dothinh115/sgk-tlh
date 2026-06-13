@@ -9,24 +9,16 @@ defineProps<{
 </script>
 
 <template>
-  <UDashboardSidebar
-    class="!w-72 bg-default"
-    :ui="{
-      root: 'sticky top-[var(--ui-header-height)] hidden lg:flex h-[calc(100vh-var(--ui-header-height))] min-h-0 !w-72 shrink-0 flex-col border-e border-default',
-      header: 'h-auto shrink-0 px-4 py-4',
-      body: 'flex-1 overflow-y-auto px-3 pb-4 pt-0',
-      footer: 'border-t border-default px-4 py-3'
-    }"
-  >
-    <template #header>
-      <div class="w-full">
+  <aside class="sticky top-[var(--ui-header-height)] hidden h-[calc(100vh-var(--ui-header-height))] min-h-0 w-72 shrink-0 flex-col border-e border-default bg-default lg:flex">
+    <header class="h-auto shrink-0 px-4 py-4">
+      <div>
         <p class="text-sm font-semibold uppercase tracking-wide text-muted">
           Mùa giải
         </p>
       </div>
-    </template>
+    </header>
 
-    <nav>
+    <nav class="flex-1 overflow-y-auto px-3 pb-4 pt-0">
       <NuxtLink
         v-for="season in seasons"
         :key="season.slug"
@@ -51,5 +43,5 @@ defineProps<{
         </div>
       </NuxtLink>
     </nav>
-  </UDashboardSidebar>
+  </aside>
 </template>

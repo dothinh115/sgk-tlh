@@ -152,34 +152,48 @@ function queryValue(value: unknown): string {
           </p>
         </div>
 
-        <OverviewStats
-          :updated-at="updatedAt"
-          :team-count="teams.length"
-        />
-
-        <UAlert
+        <div
           v-if="isUpdating"
-          color="warning"
-          variant="subtle"
-          icon="i-lucide-refresh-cw"
-          :title="settings?.updatingTitle || 'Dữ liệu đang được cập nhật'"
-          :description="settings?.updatingMessage || 'Thăng Long Hội đang chỉnh lại dữ liệu mùa. Một số nội dung có thể thay đổi trong ít phút tới.'"
-          :ui="{
-            root: 'border border-warning/30 bg-warning/10',
-            icon: 'animate-spin'
-          }"
-        />
-
-        <UAlert
-          v-if="error"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          title="Không đọc được dữ liệu"
-          :description="error.message"
-        />
+          class="flex min-h-[calc(100vh-var(--ui-header-height)-3rem)] items-center justify-center"
+        >
+          <UAlert
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-refresh-cw"
+            :title="settings?.updatingTitle || 'Dữ liệu đang được cập nhật'"
+            :description="settings?.updatingMessage || 'Thăng Long Hội đang chỉnh lại dữ liệu mùa. Một số nội dung có thể thay đổi trong ít phút tới.'"
+            :ui="{
+              root: 'max-w-2xl border border-warning/30 bg-warning/10',
+              icon: 'animate-spin'
+            }"
+          />
+        </div>
 
         <template v-else>
+          <OverviewStats
+            :updated-at="updatedAt"
+            :team-count="teams.length"
+          />
+
+          <UAlert
+            v-if="error"
+            color="error"
+            variant="soft"
+            icon="i-lucide-circle-alert"
+            title="Không đọc được dữ liệu"
+            :description="error.message"
+          />
+
+          <UAlert
+            v-if="settings?.notice"
+            color="primary"
+            variant="subtle"
+            icon="i-lucide-megaphone"
+            title="Thông báo"
+            :description="settings.notice"
+            :ui="{ root: 'border border-primary/25 bg-primary/10' }"
+          />
+
           <TeamList
             :teams="teams"
             :copied-team-id="copiedTeamId"

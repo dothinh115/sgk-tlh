@@ -96,6 +96,7 @@ function normalizeSettings(raw: Record<string, unknown>): SeasonGuideSettings {
     updating: toBoolean(raw.updating),
     updatingTitle: clean(raw.updatingTitle) || fallback.updatingTitle,
     updatingMessage: clean(raw.updatingMessage) || fallback.updatingMessage,
+    notice: clean(raw.notice),
     defaultSeasonSlug: clean(raw.defaultSeasonSlug),
     apiVersion: toNumber(raw.apiVersion),
     lastUpdated: clean(raw.lastUpdated)
@@ -107,6 +108,7 @@ function defaultSettings(): SeasonGuideSettings {
     updating: false,
     updatingTitle: 'Dữ liệu đang được cập nhật',
     updatingMessage: 'Thăng Long Hội đang chỉnh lại dữ liệu mùa. Một số nội dung có thể thay đổi trong ít phút tới.',
+    notice: '',
     defaultSeasonSlug: '',
     apiVersion: null,
     lastUpdated: ''

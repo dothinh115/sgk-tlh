@@ -12,6 +12,7 @@ interface PrimaryColorService {
 
 const PRIMARY_COLOR_STORAGE_KEY = 'thang-long-primary-color'
 const DEFAULT_PRIMARY_COLOR = 'red'
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
 
 const primaryColors: PrimaryColorOption[] = [
   { label: 'Đỏ', value: 'red', class: 'bg-red-500' },
@@ -24,16 +25,24 @@ const primaryColors: PrimaryColorOption[] = [
 ]
 
 export default defineNuxtPlugin(() => {
-  const current = useState<string>('primary-color', () => DEFAULT_PRIMARY_COLOR)
+  const primaryColorCookie = useCookie<string>(PRIMARY_COLOR_STORAGE_KEY, {
+    maxAge: ONE_YEAR_SECONDS,
+    path: '/',
+    sameSite: 'lax'
+  })
 
   function normalizePrimaryColor(value: string | null) {
     return primaryColors.some(color => color.value === value) ? value as string : DEFAULT_PRIMARY_COLOR
   }
 
+  const current = useState<string>('primary-color', () => normalizePrimaryColor(primaryColorCookie.value))
+
   function setPrimaryColor(value: string | null) {
     const primary = normalizePrimaryColor(value)
 
     current.value = primary
+    primaryColorCookie.value = primary
+
     updateAppConfig({
       ui: {
         colors: {
@@ -47,7 +56,7 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-  setPrimaryColor(import.meta.client ? localStorage.getItem(PRIMARY_COLOR_STORAGE_KEY) : DEFAULT_PRIMARY_COLOR)
+  setPrimaryColor(current.value)
 
   return {
     provide: {

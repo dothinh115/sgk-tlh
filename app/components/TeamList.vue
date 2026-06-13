@@ -2,7 +2,7 @@
 import type { SeasonTeam } from '../../shared/types/season-guide'
 import { teamId } from '../utils/season-guide'
 
-defineProps<{
+const props = defineProps<{
   teams: SeasonTeam[]
   copiedTeamId: string
 }>()
@@ -11,10 +11,78 @@ const emit = defineEmits<{
   selectTeam: [team: SeasonTeam]
   shareTeam: [team: SeasonTeam]
 }>()
+
+const search = ref('')
+
+const visibleTeams = computed(() => {
+  const keyword = normalizeSearch(search.value)
+
+  if (!keyword) {
+    return props.teams
+  }
+
+  return props.teams
+    .map(team => ({
+      team,
+      score: searchScore(team, keyword)
+    }))
+    .filter(result => result.score !== Number.POSITIVE_INFINITY)
+    .sort((a, b) => a.score - b.score || a.team.rank - b.team.rank)
+    .map(result => result.team)
+})
+
 function generalNames(team: SeasonTeam) {
   const lineup = Array.isArray(team.lineup) ? team.lineup : []
 
   return lineup.map(row => row.general).filter(Boolean).slice(0, 3).join(' · ')
+}
+
+function searchScore(team: SeasonTeam, keyword: string) {
+  const primaryFields = [team.name]
+  const priorityFields = [team.tier, generalNames(team)]
+  const secondaryFields = [
+    team.mentor,
+    team.notes,
+    ...team.builds.flatMap(build => [build.name, build.status, build.idea, build.source]),
+    ...team.lineup.flatMap(row => [
+      row.general,
+      row.tactic1,
+      row.tactic2,
+      row.battleBook,
+      row.attribute,
+      row.role,
+      row.note,
+      row.source
+    ])
+  ]
+
+  if (includesKeyword(primaryFields, keyword)) {
+    return 0
+  }
+
+  if (includesKeyword(priorityFields, keyword)) {
+    return 1
+  }
+
+  if (includesKeyword(secondaryFields, keyword)) {
+    return 2
+  }
+
+  return Number.POSITIVE_INFINITY
+}
+
+function includesKeyword(values: string[], keyword: string) {
+  return values.some(value => normalizeSearch(value).includes(keyword))
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
 }
 </script>
 
@@ -34,13 +102,23 @@ function generalNames(team: SeasonTeam) {
         color="neutral"
         variant="soft"
       >
-        {{ teams.length }} đội
+        {{ visibleTeams.length }} đội
       </UBadge>
+    </div>
+
+    <div class="border-b border-default p-4">
+      <UInput
+        v-model="search"
+        icon="i-lucide-search"
+        size="lg"
+        placeholder="Tìm đội, tướng, tier, chiến pháp, binh thư..."
+        :ui="{ root: 'w-full', base: 'h-11' }"
+      />
     </div>
 
     <div class="divide-y divide-default">
       <div
-        v-for="team in teams"
+        v-for="team in visibleTeams"
         :key="teamId(team)"
         role="button"
         tabindex="0"
@@ -86,6 +164,13 @@ function generalNames(team: SeasonTeam) {
           @click.stop="emit('shareTeam', team)"
         />
       </div>
+
+      <UEmpty
+        v-if="search && !visibleTeams.length"
+        icon="i-lucide-search-x"
+        title="Không tìm thấy đội hình"
+        description="Thử tìm theo tên đội, tên tướng, tier, chiến pháp hoặc binh thư."
+      />
     </div>
   </section>
 </template>
