@@ -55,7 +55,7 @@ function syncTeamPath(team: SeasonTeam) {
     return
   }
 
-  router.replace(`/seasons/${nextSeason}/${nextTeam}`)
+  router.push(`/seasons/${nextSeason}/${nextTeam}`)
 }
 
 function clearTeamPath() {
@@ -91,7 +91,13 @@ function buildTeamUrl(team: SeasonTeam) {
 }
 
 watch([teams, routeTeam], ([currentTeams, currentTeam]) => {
-  if (!currentTeams.length || !currentTeam) {
+  if (!currentTeam) {
+    selectedTeam.value = null
+    detailOpen.value = false
+    return
+  }
+
+  if (!currentTeams.length) {
     return
   }
 
