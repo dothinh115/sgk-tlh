@@ -27,7 +27,7 @@
 
 ## Team List
 - Team rows use `div role="button"` instead of `<button>` because each row contains a real share `UButton`; nested buttons break browser DOM layout.
-- Season detail routes use `/seasons/:season/:team?` through `app/pages/seasons/[season]/[[team]].vue` so opening a team drawer does not remount the team list or reset search/filter state.
+- Season detail routes use `/seasons/:season/:team?` through `app/pages/seasons/[season]/[[team]].vue`. The page key is the season slug, so changing only the team param opens the drawer without remounting the team list or resetting search/filter state.
 - Team list rows should stay compact: rank, team name, tier, three general names, and share action. Detailed tactics, battle books, attributes, mentor, and notes belong in the drawer.
 - Team country, troop, and tag badges come only from `factions`, `troopTypes`, and `tags`; country and troop colors are fixed in `app/utils/team-badges.ts` and must not follow the page primary color.
 - Team `analysisItems`, `objectionItems`, and notes are newline-split lists shown in the drawer only when present. The drawer order is builds, analysis, objections, then notes.

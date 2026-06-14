@@ -13,8 +13,24 @@ const emit = defineEmits<{
   shareTeam: [team: SeasonTeam]
 }>()
 
-const search = ref('')
-const activeFilters = ref<string[]>([])
+interface FilterOption {
+  key: string
+  groupKey: string
+  label: string
+  value: string
+  count: number
+  className: string
+}
+
+interface FilterGroup {
+  label: string
+  getter: (team: SeasonTeam) => string[]
+  classGetter: (value: string) => string
+}
+
+const singleSelectFilterGroups = new Set([filterGroupKey('Phe'), filterGroupKey('Binh chủng')])
+const search = useState('team-list-search', () => '')
+const activeFilters = useState<string[]>('team-list-active-filters', () => [])
 
 const visibleTeams = computed(() => {
   const keyword = normalizeSearch(search.value)
@@ -35,13 +51,28 @@ const visibleTeams = computed(() => {
 })
 
 const filterOptions = computed(() => {
-  const options = [
-    ...collectFilterOptions('Phe', props.teams, team => teamList(team.factions), factionBadgeClass),
-    ...collectFilterOptions('Binh chủng', props.teams, team => teamList(team.troopTypes), troopTypeBadgeClass),
-    ...collectFilterOptions('Thẻ', props.teams, team => teamList(team.tags), tagBadgeClass)
+  const filteredTeams = props.teams.filter(matchesActiveFilters)
+  const groups: FilterGroup[] = [
+    {
+      label: 'Phe',
+      getter: team => teamList(team.factions),
+      classGetter: factionBadgeClass
+    },
+    {
+      label: 'Binh chủng',
+      getter: team => teamList(team.troopTypes),
+      classGetter: troopTypeBadgeClass
+    },
+    {
+      label: 'Thẻ',
+      getter: team => teamList(team.tags),
+      classGetter: tagBadgeClass
+    }
   ]
 
-  return options.filter(option => option.count > 0)
+  return groups
+    .flatMap(group => collectFilterOptions(group.label, filteredTeams, group.getter, group.classGetter))
+    .filter(option => option.count > 0)
 })
 
 const hasActiveFilters = computed(() => activeFilters.value.length > 0)
@@ -57,8 +88,9 @@ function collectFilterOptions(
   teams: SeasonTeam[],
   getter: (team: SeasonTeam) => string[],
   classGetter: (value: string) => string
-) {
+): FilterOption[] {
   const counts = new Map<string, { value: string, count: number }>()
+  const groupKey = filterGroupKey(label)
 
   for (const team of teams) {
     for (const value of unique(getter(team))) {
@@ -75,6 +107,7 @@ function collectFilterOptions(
   return [...counts.entries()]
     .map(([key, item]) => ({
       key,
+      groupKey,
       label,
       value: item.value,
       count: item.count,
@@ -83,10 +116,21 @@ function collectFilterOptions(
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'vi'))
 }
 
-function toggleFilter(key: string) {
-  activeFilters.value = activeFilters.value.includes(key)
-    ? activeFilters.value.filter(item => item !== key)
-    : [...activeFilters.value, key]
+function toggleFilter(option: FilterOption) {
+  if (activeFilters.value.includes(option.key)) {
+    activeFilters.value = activeFilters.value.filter(item => item !== option.key)
+    return
+  }
+
+  if (singleSelectFilterGroups.has(option.groupKey)) {
+    activeFilters.value = [
+      ...activeFilters.value.filter(item => !item.startsWith(`${option.groupKey}:`)),
+      option.key
+    ]
+    return
+  }
+
+  activeFilters.value = [...activeFilters.value, option.key]
 }
 
 function clearFilters() {
@@ -158,7 +202,11 @@ function unique(values: string[]) {
 }
 
 function filterKey(label: string, value: string) {
-  return `${normalizeSearch(label)}:${normalizeSearch(value)}`
+  return `${filterGroupKey(label)}:${normalizeSearch(value)}`
+}
+
+function filterGroupKey(label: string) {
+  return normalizeSearch(label)
 }
 
 function includesKeyword(values: string[], keyword: string) {
@@ -237,7 +285,7 @@ function normalizeSearch(value: string) {
               option.className,
               activeFilters.includes(option.key) ? 'ring-2 ring-primary/60 ring-offset-2 ring-offset-default' : 'opacity-75 hover:opacity-100'
             ]"
-            @click="toggleFilter(option.key)"
+            @click="toggleFilter(option)"
           >
             <span>{{ option.value }}</span>
             <span class="rounded bg-default/70 px-1 text-[10px] leading-4 text-muted">
