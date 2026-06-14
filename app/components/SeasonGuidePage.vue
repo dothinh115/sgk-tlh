@@ -14,11 +14,12 @@ const routeSeason = computed(() => paramValue(route.params.season))
 const routeTeam = computed(() => paramValue(route.params.team))
 let copiedResetTimer: ReturnType<typeof setTimeout> | undefined
 
-const { data, error } = await useAsyncData<SeasonGuidePayload>('season-guide', () => {
-  return $fetch(config.public.seasonApiBase, {
-    query: routeSeason.value ? { season: routeSeason.value } : undefined
-  })
-}, {
+const seasonGuideKey = computed(() => `season-guide:${routeSeason.value || 'default'}`)
+const seasonGuideQuery = computed(() => routeSeason.value ? { season: routeSeason.value } : undefined)
+
+const { data, error } = await useApiData<SeasonGuidePayload>(config.public.seasonApiBase, {
+  key: seasonGuideKey,
+  query: seasonGuideQuery,
   watch: [routeSeason]
 })
 

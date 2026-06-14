@@ -5,10 +5,9 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const sidebarOpen = ref(false)
 
-const { data } = await useAsyncData<SeasonGuideMetaPayload>('season-guide-meta-home', () => {
-  return $fetch(config.public.seasonApiBase, {
-    query: { mode: 'seasons' }
-  })
+const { data } = await useApiData<SeasonGuideMetaPayload>(config.public.seasonApiBase, {
+  key: 'season-guide-meta-home',
+  query: { mode: 'seasons' }
 })
 
 const seasons = computed(() => data.value?.seasons ?? [])

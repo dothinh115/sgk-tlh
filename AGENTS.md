@@ -11,6 +11,7 @@
 - The guide data is loaded through `server/api/season-guide.get.ts`.
 - The M18 season team list is fetched from Google Apps Script with `mode=seasons&kind=m18_teams`; metadata-only `mode=seasons` must not be used as the M18 team payload.
 - Khai hoang data is loaded through `server/api/khai-hoang.get.ts`, which proxies Google Apps Script `mode=khai-hoang&kind=doi-hinh` and `mode=khai-hoang&kind=cham-su`.
+- Frontend data calls use `app/composables/useApiData.ts`, a small `useFetch` wrapper with explicit keys and `getCachedData` from Nuxt payload/static data so revisiting a route can reuse cached data instead of refetching immediately.
 - There is no team-detail server route; the drawer reads team builds and lineup directly from the main season payload.
 - The server route expects the Google Apps Script season API to return `settings`, `seasons`, and all teams from the current clustered sheet schema. Team rows use `Phe`, `Binh chủng`, `Thẻ`, `Bái sư Đô Úy`, `Phân tích`, `Phản biện`, and `Ghi chú`; legacy crawl confidence fields are not shown as badges.
 - Team detail drawer reads from the selected team in the list payload. Do not add a client-side team-detail fetch unless the spreadsheet contract changes again.

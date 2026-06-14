@@ -6,11 +6,12 @@ const activeKind = computed(() => paramValue(route.params.kind) || 'doi-hinh')
 const search = ref('')
 const sidebarOpen = ref(false)
 
-const { data, error } = await useAsyncData<KhaiHoangPayload>(() => `khai-hoang-${activeKind.value}`, () => {
-  return $fetch('/api/khai-hoang', {
-    query: { kind: activeKind.value }
-  })
-}, {
+const khaiHoangKey = computed(() => `khai-hoang:${activeKind.value}`)
+const khaiHoangQuery = computed(() => ({ kind: activeKind.value }))
+
+const { data, error } = await useApiData<KhaiHoangPayload>('/api/khai-hoang', {
+  key: khaiHoangKey,
+  query: khaiHoangQuery,
   watch: [activeKind]
 })
 
