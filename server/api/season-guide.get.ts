@@ -1,73 +1,100 @@
-import type { SeasonGuidePayload, SeasonGuideSettings, SeasonSummary, SeasonTeam } from '../../shared/types/season-guide'
+import type { KhaiHoangMenu, SeasonGuideMetaPayload, SeasonGuidePayload, SeasonGuideSettings, SeasonSummary, SeasonTeam } from '../../shared/types/season-guide'
 
 interface SeasonApiResponse {
   ok: boolean
   mode: string
+  kind?: string
   spreadsheetId: string
   updatedAt?: string
   settings?: Record<string, unknown>
-  season?: Record<string, string>
   seasons?: Array<Record<string, string>>
+  khaiHoangMenus?: Array<Record<string, string>>
   teams?: Array<Record<string, unknown>>
   message?: string
 }
 
-export default defineEventHandler(async (event): Promise<SeasonGuidePayload> => {
+export default defineEventHandler(async (event): Promise<SeasonGuidePayload | SeasonGuideMetaPayload> => {
   const config = useRuntimeConfig()
   const source = config.seasonGuideSource as string
   const query = getQuery(event)
+  const requestedMode = clean(query.mode)
+  const requestedKind = clean(query.kind)
   const requestedSeason = clean(query.season)
-  const seasonsResponse = await $fetch<SeasonApiResponse>(appendQuery(source, {
-    mode: 'seasons'
-  })).catch(() => null)
+  const sourceQuery = requestedMode === 'seasons' && !requestedKind
+    ? { mode: 'seasons' }
+    : { mode: 'seasons', kind: 'm18_teams', ...(requestedSeason ? { season: requestedSeason } : {}) }
+  const response = await $fetch<SeasonApiResponse>(appendQuery(source, sourceQuery)).catch(() => null)
 
-  if (!seasonsResponse) {
+  if (!response) {
     return updatingPayload()
   }
 
-  if (!seasonsResponse.ok) {
+  if (!response.ok) {
     throw createError({
       statusCode: 502,
-      statusMessage: seasonsResponse.message || 'Không đọc được dữ liệu mùa từ Google Sheets API.'
+      statusMessage: response.message || 'Không đọc được dữ liệu mùa từ Google Sheets API.'
     })
   }
 
-  const settings = normalizeSettings(seasonsResponse.settings ?? {})
-  const seasons = (seasonsResponse.seasons ?? [])
+  const settings = normalizeSettings(response.settings ?? {})
+  const seasons = (response.seasons ?? [])
     .map(normalizeSeason)
     .filter(season => season.slug)
+  const khaiHoangMenus = (response.khaiHoangMenus ?? [])
+    .map(normalizeKhaiHoangMenu)
+    .filter(menu => menu.slug)
 
-  if (seasonsResponse.mode === 'season') {
-    return normalizeSeasonPayload(seasonsResponse, settings, seasons)
+  if (requestedMode === 'seasons' && !requestedKind) {
+    return normalizeMetaPayload(response, settings, seasons, khaiHoangMenus)
+  }
+
+  if (!Array.isArray(response.teams)) {
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'Google Sheets API chưa trả teams cho mode=seasons&kind=m18_teams.'
+    })
   }
 
   const selectedSeasonSlug = requestedSeason || settings.defaultSeasonSlug || seasons[0]?.slug
 
   if (!selectedSeasonSlug) {
-    return updatingPayload(seasonsResponse)
+    return updatingPayload(response)
   }
 
-  const seasonResponse = await $fetch<SeasonApiResponse>(appendQuery(source, {
-    season: selectedSeasonSlug
-  })).catch(() => null)
-
-  if (!seasonResponse?.ok) {
-    return updatingPayload(seasonsResponse)
-  }
-
-  return normalizeSeasonPayload(seasonResponse, settings, seasons)
+  return normalizeSeasonPayload(response, settings, seasons, khaiHoangMenus, selectedSeasonSlug)
 })
 
-function normalizeSeasonPayload(response: SeasonApiResponse, settings: SeasonGuideSettings, seasons: SeasonSummary[]): SeasonGuidePayload {
-  const activeSeason = response.season ? normalizeSeason(response.season) : seasons.find(season => season.slug === settings.defaultSeasonSlug)
-
+function normalizeMetaPayload(
+  response: SeasonApiResponse,
+  settings: SeasonGuideSettings,
+  seasons: SeasonSummary[],
+  khaiHoangMenus: KhaiHoangMenu[]
+): SeasonGuideMetaPayload {
   return {
     ok: true,
     updatedAt: response.updatedAt ?? new Date().toISOString(),
     spreadsheetId: response.spreadsheetId,
     settings,
     seasons,
-    activeSeasonSlug: activeSeason?.slug ?? settings.defaultSeasonSlug,
+    khaiHoangMenus
+  }
+}
+
+function normalizeSeasonPayload(
+  response: SeasonApiResponse,
+  settings: SeasonGuideSettings,
+  seasons: SeasonSummary[],
+  khaiHoangMenus: KhaiHoangMenu[],
+  activeSeasonSlug: string
+): SeasonGuidePayload {
+  return {
+    ok: true,
+    updatedAt: response.updatedAt ?? new Date().toISOString(),
+    spreadsheetId: response.spreadsheetId,
+    settings,
+    seasons,
+    khaiHoangMenus,
+    activeSeasonSlug,
     teams: normalizeTeams(response.teams ?? []),
     stats: []
   }
@@ -83,6 +110,7 @@ function updatingPayload(response?: SeasonApiResponse): SeasonGuidePayload {
       updating: true
     },
     seasons: [],
+    khaiHoangMenus: [],
     activeSeasonSlug: '',
     teams: [],
     stats: []
@@ -122,6 +150,13 @@ function normalizeSeason(raw: Record<string, string>): SeasonSummary {
     name: clean(raw.name),
     title: clean(raw.title),
     status: clean(raw.status)
+  }
+}
+
+function normalizeKhaiHoangMenu(raw: Record<string, string>): KhaiHoangMenu {
+  return {
+    slug: clean(raw.slug),
+    name: clean(raw.name)
   }
 }
 

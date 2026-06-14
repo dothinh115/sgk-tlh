@@ -4,7 +4,9 @@ const routeRules = isDevelopment
   ? {}
   : {
       '/api/season-guide': { swr: 30 },
-      '/api/season-guide/*': { swr: 30 }
+      '/api/season-guide/*': { swr: 30 },
+      '/api/khai-hoang': { swr: 30 },
+      '/api/khai-hoang/*': { swr: 30 }
     }
 
 // https://nuxt.com/docs/api/configuration/nuxt-config

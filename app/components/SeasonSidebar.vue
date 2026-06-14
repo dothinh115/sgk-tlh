@@ -1,47 +1,77 @@
 <script setup lang="ts">
-import type { SeasonSummary } from '../../shared/types/season-guide'
+import type { KhaiHoangMenu, SeasonSummary } from '../../shared/types/season-guide'
 
-defineProps<{
-  teamCount: number
+const props = defineProps<{
   seasons: SeasonSummary[]
+  khaiHoangMenus?: KhaiHoangMenu[]
   activeSeasonSlug: string
+  activeKhaiHoangKind?: string
 }>()
+
+const openGroups = useCookie<string[]>('thang-long-sidebar-open-groups', {
+  default: () => ['seasons', 'starter']
+})
+
+const accordionItems = [
+  {
+    label: 'Mùa giải',
+    icon: 'i-lucide-calendar-days',
+    value: 'seasons'
+  },
+  {
+    label: 'Khai hoang',
+    icon: 'i-lucide-sprout',
+    value: 'starter'
+  }
+]
+
+const seasonItems = computed(() => props.seasons.map(season => ({
+  label: season.name,
+  icon: 'i-lucide-book-open-text',
+  to: `/seasons/${season.slug}`,
+  active: season.slug === props.activeSeasonSlug
+})))
+
+const starterItems = computed(() => {
+  const menus = props.khaiHoangMenus?.length
+    ? props.khaiHoangMenus
+    : [
+        { slug: 'doi-hinh', name: 'Đội hình' },
+        { slug: 'cham-su', name: 'Chạm sứ' }
+      ]
+
+  return menus.map(menu => ({
+    label: menu.name,
+    icon: menu.slug === 'cham-su' ? 'i-lucide-gem' : 'i-lucide-users',
+    to: `/khai-hoang/${menu.slug}`,
+    active: menu.slug === props.activeKhaiHoangKind
+  }))
+})
 </script>
 
 <template>
   <aside class="sticky top-[var(--ui-header-height)] hidden h-[calc(100vh-var(--ui-header-height))] min-h-0 w-72 shrink-0 flex-col border-e border-default bg-default lg:flex">
-    <header class="h-auto shrink-0 px-4 py-4">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-wide text-muted">
-          Mùa giải
-        </p>
-      </div>
-    </header>
-
-    <nav class="flex-1 overflow-y-auto px-3 pb-4 pt-0">
-      <NuxtLink
-        v-for="season in seasons"
-        :key="season.slug"
-        :to="{ query: { season: season.slug } }"
-        class="block rounded-lg border px-3 py-3 shadow-sm"
-        :class="season.slug === activeSeasonSlug ? 'border-primary/25 bg-primary/15 text-primary' : 'border-default bg-elevated/40 text-default hover:bg-elevated'"
+    <nav class="flex-1 overflow-y-auto px-4 py-6">
+      <UAccordion
+        v-model="openGroups"
+        type="multiple"
+        :items="accordionItems"
+        class="w-full"
+        :ui="{
+          item: 'border-b-0',
+          trigger: 'rounded-lg px-2.5 py-2.5 text-base hover:bg-elevated/60',
+          body: 'pb-3 pl-5'
+        }"
       >
-        <div class="flex items-start gap-3">
-          <span
-            class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md shadow-sm"
-            :class="season.slug === activeSeasonSlug ? 'bg-primary text-white' : 'bg-default text-muted'"
-          >
-            <UIcon
-              name="i-lucide-book-open-text"
-              class="size-5"
-            />
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="font-semibold text-highlighted">{{ season.name }}</span>
-            <span class="mt-1 block text-sm font-medium text-primary">{{ teamCount }} đội hình</span>
-          </span>
-        </div>
-      </NuxtLink>
+        <template #body="{ item }">
+          <UNavigationMenu
+            orientation="vertical"
+            :items="item.value === 'seasons' ? seasonItems : starterItems"
+            highlight
+            class="w-full"
+          />
+        </template>
+      </UAccordion>
     </nav>
   </aside>
 </template>

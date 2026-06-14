@@ -74,6 +74,11 @@ export interface SeasonGuideSettings {
   lastUpdated: string
 }
 
+export interface KhaiHoangMenu {
+  slug: string
+  name: string
+}
+
 export interface SeasonSummary {
   slug: string
   prefix: string
@@ -88,7 +93,47 @@ export interface SeasonGuidePayload {
   spreadsheetId: string
   settings: SeasonGuideSettings
   seasons: SeasonSummary[]
+  khaiHoangMenus: KhaiHoangMenu[]
   activeSeasonSlug: string
   teams: SeasonTeam[]
   stats: CrawlStat[]
+}
+
+export interface SeasonGuideMetaPayload {
+  ok: boolean
+  updatedAt: string
+  spreadsheetId: string
+  settings: SeasonGuideSettings
+  seasons: SeasonSummary[]
+  khaiHoangMenus: KhaiHoangMenu[]
+}
+
+export interface KhaiHoangDoiHinhRow {
+  general: string
+  before20: string
+  after20: string
+}
+
+export interface KhaiHoangChamSuRow {
+  general: string
+  tactic: string
+}
+
+export interface KhaiHoangItem {
+  slug: string
+  rank: number
+  name: string
+  transformTo: string[]
+  notes: string
+  lineup: Array<KhaiHoangDoiHinhRow | KhaiHoangChamSuRow>
+}
+
+export interface KhaiHoangPayload {
+  ok: boolean
+  updatedAt: string
+  spreadsheetId: string
+  settings: SeasonGuideSettings
+  seasons: SeasonSummary[]
+  menu: KhaiHoangMenu
+  items: KhaiHoangItem[]
 }
