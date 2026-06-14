@@ -73,13 +73,6 @@ function teamList<T>(value: T[] | undefined | null) {
       >
         <div class="border-b border-default bg-default p-5 sm:p-6">
           <div class="flex flex-wrap items-center gap-3">
-            <UBadge
-              color="primary"
-              variant="solid"
-            >
-              #{{ team.rank }}
-            </UBadge>
-
             <UButton
               color="primary"
               variant="soft"

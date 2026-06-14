@@ -14,15 +14,17 @@ const emit = defineEmits<{
 }>()
 
 const search = ref('')
+const activeFilters = ref<string[]>([])
 
 const visibleTeams = computed(() => {
   const keyword = normalizeSearch(search.value)
+  const filteredTeams = props.teams.filter(matchesActiveFilters)
 
   if (!keyword) {
-    return props.teams
+    return filteredTeams
   }
 
-  return props.teams
+  return filteredTeams
     .map(team => ({
       team,
       score: searchScore(team, keyword)
@@ -32,10 +34,77 @@ const visibleTeams = computed(() => {
     .map(result => result.team)
 })
 
+const filterOptions = computed(() => {
+  const options = [
+    ...collectFilterOptions('Phe', props.teams, team => teamList(team.factions), factionBadgeClass),
+    ...collectFilterOptions('Binh chủng', props.teams, team => teamList(team.troopTypes), troopTypeBadgeClass),
+    ...collectFilterOptions('Thẻ', props.teams, team => teamList(team.tags), tagBadgeClass)
+  ]
+
+  return options.filter(option => option.count > 0)
+})
+
+const hasActiveFilters = computed(() => activeFilters.value.length > 0)
+
 function generalNames(team: SeasonTeam) {
   const lineup = teamList(team.lineup)
 
   return lineup.map(row => row.general).filter(Boolean).slice(0, 3).join(' · ')
+}
+
+function collectFilterOptions(
+  label: string,
+  teams: SeasonTeam[],
+  getter: (team: SeasonTeam) => string[],
+  classGetter: (value: string) => string
+) {
+  const counts = new Map<string, { value: string, count: number }>()
+
+  for (const team of teams) {
+    for (const value of unique(getter(team))) {
+      const key = filterKey(label, value)
+      const current = counts.get(key)
+
+      counts.set(key, {
+        value,
+        count: (current?.count ?? 0) + 1
+      })
+    }
+  }
+
+  return [...counts.entries()]
+    .map(([key, item]) => ({
+      key,
+      label,
+      value: item.value,
+      count: item.count,
+      className: classGetter(item.value)
+    }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'vi'))
+}
+
+function toggleFilter(key: string) {
+  activeFilters.value = activeFilters.value.includes(key)
+    ? activeFilters.value.filter(item => item !== key)
+    : [...activeFilters.value, key]
+}
+
+function clearFilters() {
+  activeFilters.value = []
+}
+
+function matchesActiveFilters(team: SeasonTeam) {
+  if (!activeFilters.value.length) {
+    return true
+  }
+
+  const teamKeys = [
+    ...teamList(team.factions).map(value => filterKey('Phe', value)),
+    ...teamList(team.troopTypes).map(value => filterKey('Binh chủng', value)),
+    ...teamList(team.tags).map(value => filterKey('Thẻ', value))
+  ]
+
+  return activeFilters.value.every(key => teamKeys.includes(key))
 }
 
 function searchScore(team: SeasonTeam, keyword: string) {
@@ -84,6 +153,14 @@ function teamList<T>(value: T[] | undefined | null) {
   return Array.isArray(value) ? value : []
 }
 
+function unique(values: string[]) {
+  return [...new Set(values)]
+}
+
+function filterKey(label: string, value: string) {
+  return `${normalizeSearch(label)}:${normalizeSearch(value)}`
+}
+
 function includesKeyword(values: string[], keyword: string) {
   return values.some(value => normalizeSearch(value).includes(keyword))
 }
@@ -127,48 +204,100 @@ function normalizeSearch(value: string) {
         placeholder="Tìm đội, tướng, tier, quốc gia, binh chủng, thẻ..."
         :ui="{ root: 'w-full', base: 'h-11' }"
       />
+
+      <div
+        v-if="filterOptions.length"
+        class="mt-4 space-y-3"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-xs font-semibold uppercase tracking-wide text-muted">
+            Lọc nhanh theo badge
+          </p>
+
+          <UButton
+            v-if="hasActiveFilters"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-x"
+            class="cursor-pointer"
+            @click="clearFilters"
+          >
+            Xóa lọc
+          </UButton>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="option in filterOptions"
+            :key="option.key"
+            type="button"
+            class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition hover:-translate-y-0.5 hover:shadow-sm"
+            :class="[
+              option.className,
+              activeFilters.includes(option.key) ? 'ring-2 ring-primary/60 ring-offset-2 ring-offset-default' : 'opacity-75 hover:opacity-100'
+            ]"
+            @click="toggleFilter(option.key)"
+          >
+            <span>{{ option.value }}</span>
+            <span class="rounded bg-default/70 px-1 text-[10px] leading-4 text-muted">
+              {{ option.count }}
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="divide-y divide-default">
+    <div class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       <div
         v-for="team in visibleTeams"
         :key="teamId(team)"
         role="button"
         tabindex="0"
-        class="flex w-full cursor-pointer items-start gap-4 px-4 py-4 text-left transition hover:bg-elevated/60"
+        class="group relative flex min-h-40 w-full cursor-pointer flex-col rounded-xl border border-default bg-elevated/35 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-elevated hover:shadow-md"
         @click="emit('selectTeam', team)"
         @keydown.enter.prevent="emit('selectTeam', team)"
         @keydown.space.prevent="emit('selectTeam', team)"
       >
-        <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-bold text-primary">
-          {{ team.rank }}
-        </span>
+        <div class="flex min-w-0 items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="line-clamp-2 font-semibold leading-6 text-highlighted">
+                {{ team.name }}
+              </h3>
+              <UBadge
+                v-if="team.tier"
+                size="xs"
+                color="primary"
+                variant="subtle"
+              >
+                {{ team.tier }}
+              </UBadge>
+            </div>
 
-        <div class="min-w-0 flex-1">
-          <div class="flex flex-wrap items-center gap-2">
-            <h3 class="font-semibold text-highlighted">
-              {{ team.name }}
-            </h3>
-            <UBadge
-              v-if="team.tier"
-              size="xs"
-              color="primary"
-              variant="subtle"
+            <p
+              v-if="generalNames(team)"
+              class="mt-2 line-clamp-2 text-sm leading-6 text-muted"
             >
-              {{ team.tier }}
-            </UBadge>
+              {{ generalNames(team) }}
+            </p>
           </div>
 
-          <p
-            v-if="generalNames(team)"
-            class="mt-1 text-sm leading-6 text-muted"
-          >
-            {{ generalNames(team) }}
-          </p>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            :icon="copiedTeamId === teamId(team) ? 'i-lucide-check' : 'i-lucide-share-2'"
+            size="sm"
+            aria-label="Chia sẻ đội hình"
+            class="shrink-0 cursor-pointer opacity-80 transition group-hover:opacity-100"
+            @click.stop="emit('shareTeam', team)"
+          />
+        </div>
 
+        <div class="mt-auto pt-4">
           <div
             v-if="teamList(team.factions).length || teamList(team.troopTypes).length || teamList(team.tags).length"
-            class="mt-2 flex flex-wrap gap-1.5"
+            class="flex flex-wrap gap-1.5"
           >
             <span
               v-for="faction in teamList(team.factions)"
@@ -195,17 +324,14 @@ function normalizeSearch(value: string) {
               {{ tag }}
             </span>
           </div>
-        </div>
 
-        <UButton
-          color="neutral"
-          variant="ghost"
-          :icon="copiedTeamId === teamId(team) ? 'i-lucide-check' : 'i-lucide-share-2'"
-          size="sm"
-          aria-label="Chia sẻ đội hình"
-          class="shrink-0 cursor-pointer"
-          @click.stop="emit('shareTeam', team)"
-        />
+          <p
+            v-else
+            class="text-xs text-dimmed"
+          >
+            Chưa gắn phe / binh chủng / thẻ
+          </p>
+        </div>
       </div>
 
       <UEmpty

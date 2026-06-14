@@ -136,7 +136,7 @@ function queryValue(value: unknown): string {
     />
 
     <main class="min-w-0 flex-1">
-      <div class="mx-auto max-w-6xl space-y-5 p-4 sm:p-5 lg:p-6">
+      <div class="w-full space-y-5 p-4 sm:p-5 lg:p-6">
         <div class="flex items-center gap-3 lg:hidden">
           <UButton
             icon="i-lucide-panel-left-open"
