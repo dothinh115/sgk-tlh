@@ -1,11 +1,11 @@
-type BadgeTone = 'red' | 'green' | 'blue' | 'amber' | 'violet' | 'sky' | 'emerald' | 'slate' | 'orange' | 'neutral'
+type BadgeTone = 'red' | 'green' | 'blue' | 'amber' | 'violet' | 'sky' | 'emerald' | 'slate' | 'orange' | 'indigo' | 'neutral'
 
 const factionTones: Record<string, BadgeTone> = {
   thuc: 'green',
   ngo: 'red',
   nguy: 'blue',
   quan: 'amber',
-  khac: 'neutral'
+  khac: 'indigo'
 }
 
 const troopTypeTones: Record<string, BadgeTone> = {
@@ -29,6 +29,7 @@ const badgeToneClasses: Record<BadgeTone, string> = {
   emerald: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
   slate: 'border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300',
   orange: 'border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-300',
+  indigo: 'border-indigo-500/45 bg-indigo-500/12 text-indigo-700 dark:border-indigo-400/55 dark:bg-indigo-400/15 dark:text-indigo-200',
   neutral: 'border-default bg-elevated text-default'
 }
 
@@ -41,7 +42,7 @@ export function troopTypeBadgeClass(value: string) {
 }
 
 export function tagBadgeClass() {
-  return 'border-default bg-elevated/70 text-default'
+  return 'border-dashed border-neutral-400/70 bg-transparent text-neutral-700 dark:border-neutral-500/80 dark:text-neutral-200'
 }
 
 function badgeKey(value: string) {

@@ -155,7 +155,7 @@ function normalizeTeams(rows: Array<Record<string, unknown>>): SeasonTeam[] {
       objections: '',
       objectionItems: splitList(pick(row, ['objectionItems', 'phản biện', 'phan bien'])),
       authorNotes: '',
-      notes: clean(row.note),
+      notes: clean(pick(row, ['notes', 'note', 'ghi chú', 'ghi chu'])),
       sourceStatus: '',
       builds: normalizeBuilds(row.builds),
       lineup: normalizeLineup(row.lineup)
