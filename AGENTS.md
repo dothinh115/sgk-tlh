@@ -10,7 +10,7 @@
 ## Data
 - The guide data is loaded through `server/api/season-guide.get.ts`.
 - There is no team-detail server route; the drawer reads team builds and lineup directly from the main season payload.
-- The server route expects Google Apps Script API v3: `GET /exec?season=<slug>` returns settings, seasons, active season, and all teams with `builds` and `lineup` already included.
+- The server route expects the Google Apps Script season API to return `settings`, `seasons`, and all teams from the current clustered sheet schema. Team rows use `Phe`, `Binh chủng`, `Thẻ`, `Bái sư Đô Úy`, `Phân tích`, `Phản biện`, and `Ghi chú`; legacy crawl confidence fields are not shown as badges.
 - Team detail drawer reads from the selected team in the list payload. Do not add a client-side team-detail fetch unless the spreadsheet contract changes again.
 - `settings.updating` controls the frontend update-state screen while the spreadsheet schema or guide data is being revised. When it is true, the main guide content is not rendered.
 - `settings.notice` shows an optional notice above the team list. Leave it empty to hide the notice.
@@ -27,6 +27,8 @@
 - Team rows use `div role="button"` instead of `<button>` because each row contains a real share `UButton`; nested buttons break browser DOM layout.
 - Team detail state is stored in the `team` query param so refresh keeps the selected drawer open.
 - Team list rows should stay compact: rank, team name, tier, three general names, and share action. Detailed tactics, battle books, attributes, mentor, and notes belong in the drawer.
+- Team country, troop, and tag badges come only from `factions`, `troopTypes`, and `tags`; country and troop colors are fixed in `app/utils/team-badges.ts` and must not follow the page primary color.
+- Team `analysisItems`, `objectionItems`, and notes are newline-split lists shown in the drawer only when present. The drawer order is builds, analysis, objections, then notes.
 
 ## Deployment
 - GitHub Actions deploys from `main` using `.github/workflows/deploy.yml`.

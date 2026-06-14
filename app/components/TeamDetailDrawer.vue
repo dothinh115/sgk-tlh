@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SeasonTeam, SeasonTeamLineupRow } from '../../shared/types/season-guide'
 import { teamId } from '../utils/season-guide'
+import { factionBadgeClass, tagBadgeClass, troopTypeBadgeClass } from '../utils/team-badges'
 
 const props = defineProps<{
   team: SeasonTeam | null
@@ -25,6 +26,10 @@ const builds = computed(() => {
   return Array.isArray(teamBuilds) ? teamBuilds : []
 })
 
+const factions = computed(() => teamList(props.team?.factions))
+const troopTypes = computed(() => teamList(props.team?.troopTypes))
+const tags = computed(() => teamList(props.team?.tags))
+
 const noteItems = computed(() => {
   const note = props.team?.notes || ''
 
@@ -40,6 +45,13 @@ const mentor = computed(() => {
 
   return value && value !== '-' ? value : ''
 })
+
+const analysisItems = computed(() => teamList(props.team?.analysisItems))
+const objectionItems = computed(() => teamList(props.team?.objectionItems))
+
+function teamList<T>(value: T[] | undefined | null) {
+  return Array.isArray(value) ? value : []
+}
 </script>
 
 <template>
@@ -78,6 +90,36 @@ const mentor = computed(() => {
               {{ copiedTeamId === teamId(team) ? 'Đã copy link' : 'Chia sẻ đội hình' }}
             </UButton>
           </div>
+
+          <div
+            v-if="factions.length || troopTypes.length || tags.length"
+            class="mt-4 flex flex-wrap gap-2"
+          >
+            <span
+              v-for="faction in factions"
+              :key="`faction-${faction}`"
+              class="inline-flex rounded-md border px-2 py-1 text-sm font-medium"
+              :class="factionBadgeClass(faction)"
+            >
+              {{ faction }}
+            </span>
+            <span
+              v-for="troopType in troopTypes"
+              :key="`troop-${troopType}`"
+              class="inline-flex rounded-md border px-2 py-1 text-sm font-medium"
+              :class="troopTypeBadgeClass(troopType)"
+            >
+              {{ troopType }}
+            </span>
+            <span
+              v-for="tag in tags"
+              :key="`tag-${tag}`"
+              class="inline-flex rounded-md border px-2 py-1 text-sm font-medium"
+              :class="tagBadgeClass()"
+            >
+              {{ tag }}
+            </span>
+          </div>
         </div>
 
         <section
@@ -102,6 +144,50 @@ const mentor = computed(() => {
             :builds="builds"
             :lineup="lineup"
           />
+        </section>
+
+        <section
+          v-if="analysisItems.length"
+          class="border-b border-default p-5 sm:p-6"
+        >
+          <h3 class="section-title">
+            Phân tích
+          </h3>
+          <ul class="mt-3 space-y-2">
+            <li
+              v-for="item in analysisItems"
+              :key="item"
+              class="flex gap-2 leading-7 text-default"
+            >
+              <UIcon
+                name="i-lucide-dot"
+                class="mt-1 size-5 shrink-0 text-primary"
+              />
+              <span>{{ item }}</span>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          v-if="objectionItems.length"
+          class="border-b border-default p-5 sm:p-6"
+        >
+          <h3 class="section-title">
+            Phản biện
+          </h3>
+          <ul class="mt-3 space-y-2">
+            <li
+              v-for="item in objectionItems"
+              :key="item"
+              class="flex gap-2 leading-7 text-default"
+            >
+              <UIcon
+                name="i-lucide-dot"
+                class="mt-1 size-5 shrink-0 text-primary"
+              />
+              <span>{{ item }}</span>
+            </li>
+          </ul>
         </section>
 
         <section

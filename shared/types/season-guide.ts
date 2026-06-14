@@ -13,6 +13,9 @@ export interface SeasonTeam {
   name: string
   chineseNames: string
   tier: string
+  factions: string[]
+  troopTypes: string[]
+  tags: string[]
   mentor: string
   sourceLevel: string
   threadMentions: number | null
@@ -25,7 +28,9 @@ export interface SeasonTeam {
   variants: TeamVariant[]
   alternatives: string[]
   analysis: string
+  analysisItems: string[]
   objections: string
+  objectionItems: string[]
   authorNotes: string
   notes: string
   sourceStatus: string

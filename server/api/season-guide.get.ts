@@ -131,24 +131,29 @@ function normalizeTeams(rows: Array<Record<string, unknown>>): SeasonTeam[] {
       slug: clean(row.slug),
       detailSheet: clean(row.detailSheet),
       rank: toNumber(row.rank) ?? index + 1,
-      group: clean(row.group),
-      dataType: clean(row.dataType),
+      group: '',
+      dataType: '',
       name: clean(row.name),
       chineseNames: clean(row.chineseNames),
       tier: clean(row.tier),
+      factions: normalizeFactions(row),
+      troopTypes: normalizeTroopTypes(row),
+      tags: splitList(pick(row, ['tags', 'thẻ', 'the'])),
       mentor: clean(row.mentor),
       sourceLevel: '',
-      threadMentions: toNumber(row.threadMentions),
-      commentMentions: toNumber(row.commentMentions),
-      supportPercent: toNumber(row.supportPercent),
-      neutralPercent: toNumber(row.neutralPercent),
-      objectionPercent: toNumber(row.objectionPercent),
-      usesDoyu: clean(row.usesDoyu),
-      reliability: clean(row.reliability),
+      threadMentions: null,
+      commentMentions: null,
+      supportPercent: null,
+      neutralPercent: null,
+      objectionPercent: null,
+      usesDoyu: '',
+      reliability: '',
       variants: [],
       alternatives: [],
       analysis: '',
+      analysisItems: splitList(pick(row, ['analysisItems', 'phân tích', 'phan tich'])),
       objections: '',
+      objectionItems: splitList(pick(row, ['objectionItems', 'phản biện', 'phan bien'])),
       authorNotes: '',
       notes: clean(row.note),
       sourceStatus: '',
@@ -196,6 +201,75 @@ function normalizeLineup(value: unknown) {
     : []
 }
 
+function normalizeFactions(row: Record<string, unknown>) {
+  const explicit = splitList(pick(row, ['factions', 'phe', 'quốc gia', 'quoc gia']))
+    .map(normalizeFaction)
+    .filter(Boolean)
+
+  return unique(explicit)
+}
+
+function normalizeTroopTypes(row: Record<string, unknown>) {
+  const explicit = splitList(pick(row, ['troopTypes', 'binh chủng', 'binh chung']))
+    .map(normalizeTroopType)
+    .filter(Boolean)
+
+  return unique(explicit)
+}
+
+function normalizeFaction(value: string) {
+  const key = searchKey(value)
+
+  if (key === 'thuc') return 'Thục'
+  if (key === 'ngo') return 'Ngô'
+  if (key === 'nguy') return 'Ngụy'
+  if (key === 'quan') return 'Quần'
+  if (key === 'khac') return 'Khác'
+
+  return ''
+}
+
+function normalizeTroopType(value: string) {
+  const key = searchKey(value)
+
+  if (['ky', 'ki'].includes(key)) return 'Kỵ'
+  if (key === 'cung') return 'Cung'
+  if (key === 'thuong') return 'Thương'
+  if (['khien', 'thuan'].includes(key)) return 'Khiên'
+  if (['khi gioi', 'xe'].includes(key)) return 'Xe'
+
+  return ''
+}
+
+function splitList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap(splitList)
+  }
+
+  return clean(value)
+    .split(/\n|,|;|\/|\|/g)
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
+function pick(row: Record<string, unknown>, keys: string[]) {
+  const normalized = new Map(Object.keys(row).map(key => [searchKey(key), row[key]]))
+
+  for (const key of keys) {
+    const value = normalized.get(searchKey(key))
+
+    if (clean(value)) {
+      return value
+    }
+  }
+
+  return ''
+}
+
+function unique(values: string[]) {
+  return [...new Set(values)]
+}
+
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? value as Record<string, unknown> : {}
 }
@@ -220,6 +294,16 @@ function toBoolean(value: unknown): boolean {
   const text = clean(value).toLowerCase()
 
   return ['true', '1', 'yes', 'y', 'on', 'đúng', 'bat', 'bật'].includes(text)
+}
+
+function searchKey(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
 }
 
 function appendQuery(source: string, params: Record<string, string>): string {

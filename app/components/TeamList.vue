@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SeasonTeam } from '../../shared/types/season-guide'
 import { teamId } from '../utils/season-guide'
+import { factionBadgeClass, tagBadgeClass, troopTypeBadgeClass } from '../utils/team-badges'
 
 const props = defineProps<{
   teams: SeasonTeam[]
@@ -32,19 +33,27 @@ const visibleTeams = computed(() => {
 })
 
 function generalNames(team: SeasonTeam) {
-  const lineup = Array.isArray(team.lineup) ? team.lineup : []
+  const lineup = teamList(team.lineup)
 
   return lineup.map(row => row.general).filter(Boolean).slice(0, 3).join(' · ')
 }
 
 function searchScore(team: SeasonTeam, keyword: string) {
   const primaryFields = [team.name]
-  const priorityFields = [team.tier, generalNames(team)]
+  const priorityFields = [
+    team.tier,
+    generalNames(team),
+    ...teamList(team.factions),
+    ...teamList(team.troopTypes),
+    ...teamList(team.tags)
+  ]
   const secondaryFields = [
     team.mentor,
     team.notes,
-    ...team.builds.flatMap(build => [build.name, build.status, build.idea, build.source]),
-    ...team.lineup.flatMap(row => [
+    ...teamList(team.analysisItems),
+    ...teamList(team.objectionItems),
+    ...teamList(team.builds).flatMap(build => [build.name, build.status, build.idea, build.source]),
+    ...teamList(team.lineup).flatMap(row => [
       row.general,
       row.tactic1,
       row.tactic2,
@@ -69,6 +78,10 @@ function searchScore(team: SeasonTeam, keyword: string) {
   }
 
   return Number.POSITIVE_INFINITY
+}
+
+function teamList<T>(value: T[] | undefined | null) {
+  return Array.isArray(value) ? value : []
 }
 
 function includesKeyword(values: string[], keyword: string) {
@@ -111,7 +124,7 @@ function normalizeSearch(value: string) {
         v-model="search"
         icon="i-lucide-search"
         size="lg"
-        placeholder="Tìm đội, tướng, tier, chiến pháp, binh thư..."
+        placeholder="Tìm đội, tướng, tier, quốc gia, binh chủng, thẻ..."
         :ui="{ root: 'w-full', base: 'h-11' }"
       />
     </div>
@@ -152,6 +165,36 @@ function normalizeSearch(value: string) {
           >
             {{ generalNames(team) }}
           </p>
+
+          <div
+            v-if="teamList(team.factions).length || teamList(team.troopTypes).length || teamList(team.tags).length"
+            class="mt-2 flex flex-wrap gap-1.5"
+          >
+            <span
+              v-for="faction in teamList(team.factions)"
+              :key="`faction-${faction}`"
+              class="inline-flex rounded-md border px-1.5 py-0.5 text-xs font-medium"
+              :class="factionBadgeClass(faction)"
+            >
+              {{ faction }}
+            </span>
+            <span
+              v-for="troopType in teamList(team.troopTypes)"
+              :key="`troop-${troopType}`"
+              class="inline-flex rounded-md border px-1.5 py-0.5 text-xs font-medium"
+              :class="troopTypeBadgeClass(troopType)"
+            >
+              {{ troopType }}
+            </span>
+            <span
+              v-for="tag in teamList(team.tags)"
+              :key="`tag-${tag}`"
+              class="inline-flex rounded-md border px-1.5 py-0.5 text-xs font-medium"
+              :class="tagBadgeClass()"
+            >
+              {{ tag }}
+            </span>
+          </div>
         </div>
 
         <UButton
@@ -169,7 +212,7 @@ function normalizeSearch(value: string) {
         v-if="search && !visibleTeams.length"
         icon="i-lucide-search-x"
         title="Không tìm thấy đội hình"
-        description="Thử tìm theo tên đội, tên tướng, tier, chiến pháp hoặc binh thư."
+        description="Thử tìm theo tên đội, tên tướng, tier, quốc gia, binh chủng, thẻ, chiến pháp hoặc binh thư."
       />
     </div>
   </section>
