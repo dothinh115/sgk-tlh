@@ -120,6 +120,7 @@ watch(() => route.fullPath, () => {
           :seasons="seasons"
           :khai-hoang-menus="khaiHoangMenus"
           active-season-slug=""
+          @navigate="sidebarOpen = false"
         />
       </template>
     </USlideover>

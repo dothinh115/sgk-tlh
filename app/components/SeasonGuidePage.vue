@@ -218,6 +218,7 @@ function paramValue(value: unknown): string {
           :seasons="seasons"
           :khai-hoang-menus="data?.khaiHoangMenus ?? []"
           :active-season-slug="activeSeasonSlug"
+          @navigate="sidebarOpen = false"
         />
       </template>
     </USlideover>

@@ -246,6 +246,7 @@ watch(() => route.fullPath, () => {
           :khai-hoang-menus="khaiHoangMenus"
           active-season-slug=""
           :active-khai-hoang-kind="activeKind"
+          @navigate="sidebarOpen = false"
         />
       </template>
     </USlideover>

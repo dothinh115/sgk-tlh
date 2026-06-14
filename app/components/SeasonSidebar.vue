@@ -8,6 +8,10 @@ const props = defineProps<{
   activeKhaiHoangKind?: string
 }>()
 
+const emit = defineEmits<{
+  navigate: []
+}>()
+
 const openGroups = useCookie<string[]>('thang-long-sidebar-open-groups', {
   default: () => ['seasons', 'starter']
 })
@@ -71,6 +75,7 @@ const starterItems = computed(() => {
             :items="item.value === 'seasons' ? seasonItems : starterItems"
             highlight
             class="w-full"
+            @click="emit('navigate')"
           />
         </template>
       </UAccordion>
