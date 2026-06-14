@@ -34,6 +34,7 @@
 - Team list rows should stay compact: rank, team name, tier, three general names, and share action. Detailed tactics, battle books, attributes, mentor, and notes belong in the drawer.
 - Team country, troop, and tag badges come only from `factions`, `troopTypes`, and `tags`; country and troop colors are fixed in `app/utils/team-badges.ts` and must not follow the page primary color.
 - Team `analysisItems`, `objectionItems`, and notes are newline-split lists shown in the drawer only when present. The drawer order is builds, analysis, objections, then notes.
+- `analysisItems` and `objectionItems` must only split on spreadsheet line breaks. Do not reuse comma/semicolon badge splitting for prose fields because commas are normal Vietnamese punctuation.
 
 ## Deployment
 - GitHub Actions deploys from `main` using `.github/workflows/deploy.yml`.

@@ -186,9 +186,9 @@ function normalizeTeams(rows: Array<Record<string, unknown>>): SeasonTeam[] {
       variants: [],
       alternatives: [],
       analysis: '',
-      analysisItems: splitList(pick(row, ['analysisItems', 'phân tích', 'phan tich'])),
+      analysisItems: splitLines(pick(row, ['analysisItems', 'phân tích', 'phan tich'])),
       objections: '',
-      objectionItems: splitList(pick(row, ['objectionItems', 'phản biện', 'phan bien'])),
+      objectionItems: splitLines(pick(row, ['objectionItems', 'phản biện', 'phan bien'])),
       authorNotes: '',
       notes: clean(pick(row, ['notes', 'note', 'ghi chú', 'ghi chu'])),
       sourceStatus: '',
@@ -283,6 +283,17 @@ function splitList(value: unknown): string[] {
 
   return clean(value)
     .split(/\n|,|;|\/|\|/g)
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
+function splitLines(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap(splitLines)
+  }
+
+  return clean(value)
+    .split(/\n+/g)
     .map(item => item.trim())
     .filter(Boolean)
 }
