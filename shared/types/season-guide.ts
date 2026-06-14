@@ -33,11 +33,6 @@ export interface SeasonTeam {
   lineup: SeasonTeamLineupRow[]
 }
 
-export interface TeamDetailTextBlock {
-  title: string
-  value: string
-}
-
 export interface SeasonTeamBuild {
   id: string
   name: string
@@ -57,28 +52,6 @@ export interface SeasonTeamLineupRow {
   role: string
   note: string
   source: string
-}
-
-export interface SeasonTeamDetail {
-  summary: Record<string, string>
-  builds: SeasonTeamBuild[]
-  lineup: SeasonTeamLineupRow[]
-  variants: Array<{
-    title: string
-    value: string
-    note: string
-  }>
-  alternatives: string[]
-  analysis: TeamDetailTextBlock[]
-  authorNotes: string[]
-}
-
-export interface SeasonTeamDetailPayload {
-  ok: boolean
-  updatedAt: string
-  spreadsheetId: string
-  team: SeasonTeam
-  detail: SeasonTeamDetail
 }
 
 export interface CrawlStat {

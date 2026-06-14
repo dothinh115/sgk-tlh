@@ -1,47 +1,55 @@
+import {
+  DEFAULT_PRIMARY_COLOR,
+  getPrimaryColorStyle,
+  isPrimaryColor,
+  primaryColors,
+  PRIMARY_COLOR_STORAGE_KEY,
+  type PrimaryColorValue
+} from '~/utils/primary-colors'
+
 interface PrimaryColorOption {
   label: string
-  value: string
+  value: PrimaryColorValue
   class: string
 }
 
 interface PrimaryColorService {
-  colors: PrimaryColorOption[]
+  colors: readonly PrimaryColorOption[]
   current: Ref<string>
   set: (value: string | null) => void
 }
 
-const PRIMARY_COLOR_STORAGE_KEY = 'thang-long-primary-color'
-const DEFAULT_PRIMARY_COLOR = 'red'
-const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
-
-const primaryColors: PrimaryColorOption[] = [
-  { label: 'Đỏ', value: 'red', class: 'bg-red-500' },
-  { label: 'Cam', value: 'orange', class: 'bg-orange-500' },
-  { label: 'Vàng', value: 'amber', class: 'bg-amber-500' },
-  { label: 'Lục', value: 'green', class: 'bg-green-500' },
-  { label: 'Lam', value: 'blue', class: 'bg-blue-500' },
-  { label: 'Tím', value: 'violet', class: 'bg-violet-500' },
-  { label: 'Hồng', value: 'pink', class: 'bg-pink-500' }
-]
-
 export default defineNuxtPlugin(() => {
-  const primaryColorCookie = useCookie<string>(PRIMARY_COLOR_STORAGE_KEY, {
-    maxAge: ONE_YEAR_SECONDS,
-    path: '/',
-    sameSite: 'lax'
-  })
+  function initialPrimaryColor() {
+    if (import.meta.client) {
+      const storedColor = localStorage.getItem(PRIMARY_COLOR_STORAGE_KEY)
 
-  function normalizePrimaryColor(value: string | null) {
-    return primaryColors.some(color => color.value === value) ? value as string : DEFAULT_PRIMARY_COLOR
+      if (isPrimaryColor(storedColor)) {
+        return storedColor
+      }
+    }
+
+    return DEFAULT_PRIMARY_COLOR
   }
 
-  const current = useState<string>('primary-color', () => normalizePrimaryColor(primaryColorCookie.value))
+  const current = useState<PrimaryColorValue>('primary-color', initialPrimaryColor)
+
+  function syncPrimaryColorStyle(primary: PrimaryColorValue) {
+    let element = document.getElementById('tlh-primary-color-preflight')
+
+    if (!element) {
+      element = document.createElement('style')
+      element.id = 'tlh-primary-color-preflight'
+      document.head.appendChild(element)
+    }
+
+    element.textContent = getPrimaryColorStyle(primary)
+  }
 
   function setPrimaryColor(value: string | null) {
-    const primary = normalizePrimaryColor(value)
+    const primary = isPrimaryColor(value) ? value : DEFAULT_PRIMARY_COLOR
 
     current.value = primary
-    primaryColorCookie.value = primary
 
     updateAppConfig({
       ui: {
@@ -53,10 +61,11 @@ export default defineNuxtPlugin(() => {
 
     if (import.meta.client) {
       localStorage.setItem(PRIMARY_COLOR_STORAGE_KEY, primary)
+      syncPrimaryColorStyle(primary)
     }
   }
 
-  setPrimaryColor(current.value)
+  setPrimaryColor(initialPrimaryColor())
 
   return {
     provide: {

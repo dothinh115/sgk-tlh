@@ -1,10 +1,19 @@
 <script setup lang="ts">
+import { getPrimaryColorPreflightScript } from '~/utils/primary-colors'
+
 const title = 'Sách giáo khoa Anh Hùng Mệnh Thế'
 const description = 'Bản tổng hợp đội hình, chiến pháp, đồng thuận và phản biện cộng đồng cho mùa Anh Hùng Mệnh Thế.'
+const primaryColorPreflight = getPrimaryColorPreflightScript()
 
 useHead({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+  ],
+  script: [
+    {
+      innerHTML: primaryColorPreflight,
+      tagPosition: 'head'
+    }
   ],
   link: [
     { rel: 'icon', href: '/favicon.ico' }

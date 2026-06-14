@@ -9,6 +9,7 @@
 
 ## Data
 - The guide data is loaded through `server/api/season-guide.get.ts`.
+- There is no team-detail server route; the drawer reads team builds and lineup directly from the main season payload.
 - The server route expects Google Apps Script API v3: `GET /exec?season=<slug>` returns settings, seasons, active season, and all teams with `builds` and `lineup` already included.
 - Team detail drawer reads from the selected team in the list payload. Do not add a client-side team-detail fetch unless the spreadsheet contract changes again.
 - `settings.updating` controls the frontend update-state screen while the spreadsheet schema or guide data is being revised. When it is true, the main guide content is not rendered.
@@ -16,9 +17,10 @@
 - Production route rules use `swr: 30` for `/`, `/api/season-guide`, and `/api/season-guide/*` so Google Sheet edits settle quickly.
 
 ## Theme And Layout
-- Nuxt UI primary color defaults to red and persists in the `thang-long-primary-color` cookie, with `localStorage` written as a client-side mirror.
+- Nuxt UI primary color defaults to red and persists in `localStorage` under `thang-long-primary-color`.
+- If `localStorage` contains a saved primary color, `app/app.vue` injects a head preflight style that maps Nuxt UI `--ui-color-primary-*` variables with OKLCH fallbacks before paint; `app/plugins/00-theme.ts` then syncs Nuxt UI app config and the same style element after hydration.
 - `app/plugins/00-theme.ts` provides `$primaryColor` and updates Nuxt UI through `updateAppConfig`.
-- Nuxt UI owns the `--ui-color-primary-*` and `--ui-primary` tokens. Do not add separate style tags or CSS variable overrides for primary colors because they conflict with Nuxt UI's light/dark token generation.
+- Nuxt UI owns the `--ui-color-primary-*` and `--ui-primary` tokens. Any primary-color preflight must override those Nuxt UI variables directly instead of adding parallel color state.
 - The app shell uses a fixed header, sticky left season sidebar, main content list, and a slideover drawer for team details.
 
 ## Team List
