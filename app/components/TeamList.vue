@@ -275,7 +275,7 @@ function normalizeSearch(value: string) {
           </UButton>
         </div>
 
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-3">
           <button
             v-for="option in filterOptions"
             :key="option.key"
