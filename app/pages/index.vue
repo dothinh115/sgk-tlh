@@ -2,20 +2,14 @@
 import type { SeasonGuideMetaPayload } from '../../shared/types/season-guide'
 
 const config = useRuntimeConfig()
-const route = useRoute()
-const sidebarOpen = ref(false)
 
 const { data } = await useApiData<SeasonGuideMetaPayload>(config.public.seasonApiBase, {
-  key: 'season-guide-meta-home',
+  key: 'season-guide-meta-shell',
   query: { mode: 'seasons' }
 })
 
 const seasons = computed(() => data.value?.seasons ?? [])
 const khaiHoangMenus = computed(() => data.value?.khaiHoangMenus ?? [])
-
-watch(() => route.fullPath, () => {
-  sidebarOpen.value = false
-})
 </script>
 
 <template>
@@ -28,17 +22,6 @@ watch(() => route.fullPath, () => {
 
     <main class="min-w-0 flex-1">
       <div class="w-full space-y-5 p-4 sm:p-5 lg:p-6">
-        <div class="flex items-center gap-3 lg:hidden">
-          <UButton
-            icon="i-lucide-panel-left-open"
-            color="neutral"
-            variant="outline"
-            @click="sidebarOpen = true"
-          >
-            Menu
-          </UButton>
-        </div>
-
         <section class="rounded-xl border border-default bg-default p-5 shadow-sm sm:p-6">
           <UBadge
             color="primary"
@@ -105,23 +88,5 @@ watch(() => route.fullPath, () => {
         </section>
       </div>
     </main>
-
-    <USlideover
-      v-model:open="sidebarOpen"
-      side="left"
-      title="Menu"
-      description="Chọn mùa hoặc mục khai hoang"
-      :ui="{ content: 'w-screen max-w-full sm:max-w-sm', body: 'p-0' }"
-    >
-      <template #body>
-        <SeasonSidebar
-          class="!static !flex !h-full !w-full !border-e-0 lg:!hidden"
-          :seasons="seasons"
-          :khai-hoang-menus="khaiHoangMenus"
-          active-season-slug=""
-          @navigate="sidebarOpen = false"
-        />
-      </template>
-    </USlideover>
   </div>
 </template>

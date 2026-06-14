@@ -25,6 +25,7 @@
 - `app/plugins/00-theme.ts` provides `$primaryColor` and updates Nuxt UI through `updateAppConfig`.
 - Nuxt UI owns the `--ui-color-primary-*` and `--ui-primary` tokens. Any primary-color preflight must override those Nuxt UI variables directly instead of adding parallel color state.
 - The app shell uses a fixed header, sticky left season sidebar, main content list, and a slideover drawer for team details.
+- Mobile navigation is owned by `app/app.vue`: the header menu button opens the shared `SeasonSidebar` slideover for every page. Individual pages render only the desktop sticky sidebar and must not add local mobile menu buttons or local menu slideovers.
 
 ## Team List
 - Team rows use `div role="button"` instead of `<button>` because each row contains a real share `UButton`; nested buttons break browser DOM layout.

@@ -8,7 +8,6 @@ const router = useRouter()
 const toast = useToast()
 const selectedTeam = ref<SeasonTeam | null>(null)
 const detailOpen = ref(false)
-const sidebarOpen = ref(false)
 const copiedTeamId = ref('')
 const routeSeason = computed(() => paramValue(route.params.season))
 const routeTeam = computed(() => paramValue(route.params.team))
@@ -42,7 +41,6 @@ const updatedAt = computed(() => {
 })
 
 function openTeam(team: SeasonTeam) {
-  sidebarOpen.value = false
   syncTeamPath(team)
 }
 
@@ -119,10 +117,6 @@ watch(detailOpen, (open) => {
   }
 })
 
-watch(() => route.fullPath, () => {
-  sidebarOpen.value = false
-})
-
 function paramValue(value: unknown): string {
   return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
 }
@@ -138,21 +132,6 @@ function paramValue(value: unknown): string {
 
     <main class="min-w-0 flex-1">
       <div class="w-full space-y-5 p-4 sm:p-5 lg:p-6">
-        <div class="flex items-center gap-3 lg:hidden">
-          <UButton
-            icon="i-lucide-panel-left-open"
-            color="neutral"
-            variant="outline"
-            @click="sidebarOpen = true"
-          >
-            Menu
-          </UButton>
-
-          <p class="text-sm text-muted">
-            {{ teams.length }} đội hình
-          </p>
-        </div>
-
         <div
           v-if="isUpdating"
           class="flex min-h-[calc(100vh-var(--ui-header-height)-3rem)] items-center justify-center"
@@ -211,24 +190,6 @@ function paramValue(value: unknown): string {
         </template>
       </div>
     </main>
-
-    <USlideover
-      v-model:open="sidebarOpen"
-      side="left"
-      title="Menu"
-      description="Chọn mùa hoặc mục khai hoang"
-      :ui="{ content: 'w-screen max-w-full sm:max-w-sm', body: 'p-0' }"
-    >
-      <template #body>
-        <SeasonSidebar
-          class="!static !flex !h-full !w-full !border-e-0 lg:!hidden"
-          :seasons="seasons"
-          :khai-hoang-menus="data?.khaiHoangMenus ?? []"
-          :active-season-slug="activeSeasonSlug"
-          @navigate="sidebarOpen = false"
-        />
-      </template>
-    </USlideover>
 
     <TeamDetailDrawer
       v-model:open="detailOpen"

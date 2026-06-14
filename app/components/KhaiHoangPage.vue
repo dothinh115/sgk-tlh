@@ -4,7 +4,6 @@ import type { KhaiHoangChamSuRow, KhaiHoangDoiHinhRow, KhaiHoangMenu, KhaiHoangP
 const route = useRoute()
 const activeKind = computed(() => paramValue(route.params.kind) || 'doi-hinh')
 const search = ref('')
-const sidebarOpen = ref(false)
 
 const khaiHoangKey = computed(() => `khai-hoang:${activeKind.value}`)
 const khaiHoangQuery = computed(() => ({ kind: activeKind.value }))
@@ -71,10 +70,6 @@ function normalizeSearch(value: string) {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
 }
-
-watch(() => route.fullPath, () => {
-  sidebarOpen.value = false
-})
 </script>
 
 <template>
@@ -88,17 +83,6 @@ watch(() => route.fullPath, () => {
 
     <main class="min-w-0 flex-1">
       <div class="w-full space-y-5 p-4 sm:p-5 lg:p-6">
-        <div class="flex items-center gap-3 lg:hidden">
-          <UButton
-            icon="i-lucide-panel-left-open"
-            color="neutral"
-            variant="outline"
-            @click="sidebarOpen = true"
-          >
-            Menu
-          </UButton>
-        </div>
-
         <section class="rounded-xl border border-default bg-default p-5 shadow-sm">
           <UBadge
             color="primary"
@@ -232,24 +216,5 @@ watch(() => route.fullPath, () => {
         </section>
       </div>
     </main>
-
-    <USlideover
-      v-model:open="sidebarOpen"
-      side="left"
-      title="Menu"
-      description="Chọn mùa hoặc mục khai hoang"
-      :ui="{ content: 'w-screen max-w-full sm:max-w-sm', body: 'p-0' }"
-    >
-      <template #body>
-        <SeasonSidebar
-          class="!static !flex !h-full !w-full !border-e-0 lg:!hidden"
-          :seasons="seasons"
-          :khai-hoang-menus="khaiHoangMenus"
-          active-season-slug=""
-          :active-khai-hoang-kind="activeKind"
-          @navigate="sidebarOpen = false"
-        />
-      </template>
-    </USlideover>
   </div>
 </template>
