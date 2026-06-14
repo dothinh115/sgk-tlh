@@ -16,7 +16,6 @@ const khaiHoangMenus = computed(() => data.value?.khaiHoangMenus ?? [])
 <template>
   <div class="flex min-h-[calc(100vh-var(--ui-header-height))]">
     <SeasonSidebar
-      :team-count="0"
       :seasons="seasons"
       :khai-hoang-menus="khaiHoangMenus"
       active-season-slug=""

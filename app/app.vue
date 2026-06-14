@@ -34,6 +34,11 @@ useSeoMeta({
 
 <template>
   <UApp>
+    <NuxtLoadingIndicator
+      color="var(--ui-primary)"
+      :height="3"
+    />
+
     <div class="min-h-screen bg-elevated/55 text-default">
       <UHeader
         :toggle="false"

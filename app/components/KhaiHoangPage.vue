@@ -26,13 +26,13 @@ const visibleItems = computed(() => {
     return items.value
   }
 
-  return items.value.filter(item => {
+  return items.value.filter((item) => {
     const values = [
       item.name,
       item.notes,
       ...item.transformTo,
-      ...item.lineup.flatMap(row => {
-        const record = row as Record<string, string>
+      ...item.lineup.flatMap((row) => {
+        const record = row as unknown as Record<string, string>
 
         return Object.values(record)
       })
@@ -74,7 +74,6 @@ function normalizeSearch(value: string) {
 <template>
   <div class="flex min-h-[calc(100vh-var(--ui-header-height))]">
     <SeasonSidebar
-      :team-count="0"
       :seasons="seasons"
       :khai-hoang-menus="khaiHoangMenus"
       active-season-slug=""

@@ -42,8 +42,6 @@ const updatedAt = computed(() => {
 })
 
 function openTeam(team: SeasonTeam) {
-  selectedTeam.value = team
-  detailOpen.value = true
   sidebarOpen.value = false
   syncTeamPath(team)
 }
@@ -53,6 +51,8 @@ function syncTeamPath(team: SeasonTeam) {
   const nextSeason = activeSeasonSlug.value
 
   if (routeTeam.value === nextTeam && routeSeason.value === nextSeason) {
+    selectedTeam.value = team
+    detailOpen.value = true
     return
   }
 
@@ -100,6 +100,9 @@ watch([teams, routeTeam], ([currentTeams, currentTeam]) => {
 
   if (match && (!selectedTeam.value || teamId(selectedTeam.value) !== teamId(match))) {
     selectedTeam.value = match
+  }
+
+  if (match && !detailOpen.value) {
     detailOpen.value = true
   }
 }, { immediate: true })
@@ -118,7 +121,6 @@ function paramValue(value: unknown): string {
 <template>
   <div class="flex min-h-[calc(100vh-var(--ui-header-height))]">
     <SeasonSidebar
-      :team-count="teams.length"
       :seasons="seasons"
       :khai-hoang-menus="data?.khaiHoangMenus ?? []"
       :active-season-slug="activeSeasonSlug"
