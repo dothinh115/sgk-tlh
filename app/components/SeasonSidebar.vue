@@ -50,7 +50,9 @@ const starterItems = computed(() => {
 </script>
 
 <template>
-  <aside class="sticky top-[var(--ui-header-height)] hidden h-[calc(100vh-var(--ui-header-height))] min-h-0 w-72 shrink-0 flex-col border-e border-default bg-default lg:flex">
+  <aside
+    class="sticky top-[var(--ui-header-height)] hidden h-[calc(100vh-var(--ui-header-height))] min-h-0 w-72 shrink-0 flex-col border-e border-default bg-default lg:flex"
+  >
     <nav class="flex-1 overflow-y-auto px-4 py-6">
       <UAccordion
         v-model="openGroups"

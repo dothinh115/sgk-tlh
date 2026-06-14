@@ -27,7 +27,6 @@ const settings = computed(() => data.value?.settings)
 const isUpdating = computed(() => settings.value?.updating ?? false)
 const seasons = computed(() => data.value?.seasons ?? [])
 const activeSeasonSlug = computed(() => routeSeason.value || data.value?.activeSeasonSlug || seasons.value[0]?.slug || '')
-const activeSeason = computed(() => seasons.value.find(season => season.slug === activeSeasonSlug.value))
 
 const updatedAt = computed(() => {
   if (!data.value?.updatedAt) {
@@ -113,6 +112,10 @@ watch(detailOpen, (open) => {
   }
 })
 
+watch(() => route.fullPath, () => {
+  sidebarOpen.value = false
+})
+
 function paramValue(value: unknown): string {
   return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
 }
@@ -135,7 +138,7 @@ function paramValue(value: unknown): string {
             variant="outline"
             @click="sidebarOpen = true"
           >
-            Mùa giải
+            Menu
           </UButton>
 
           <p class="text-sm text-muted">
@@ -205,27 +208,17 @@ function paramValue(value: unknown): string {
     <USlideover
       v-model:open="sidebarOpen"
       side="left"
-      title="Mùa giải"
-      description="Chọn mùa để đọc sách giáo khoa"
+      title="Menu"
+      description="Chọn mùa hoặc mục khai hoang"
       :ui="{ content: 'w-screen max-w-full sm:max-w-sm', body: 'p-0' }"
     >
       <template #body>
-        <div class="p-3">
-          <div class="rounded-lg bg-primary/10 px-3 py-3 text-primary">
-            <div class="flex items-start gap-3">
-              <span class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md bg-default shadow-sm">
-                <UIcon
-                  name="i-lucide-book-open-text"
-                  class="size-5"
-                />
-              </span>
-              <span class="min-w-0 flex-1">
-                <span class="font-semibold">{{ activeSeason?.name || 'Anh Hùng Mệnh Thế' }}</span>
-                <span class="mt-1 block text-sm text-primary/75">{{ teams.length }} đội hình</span>
-              </span>
-            </div>
-          </div>
-        </div>
+        <SeasonSidebar
+          class="!static !flex !h-full !w-full !border-e-0 lg:!hidden"
+          :seasons="seasons"
+          :khai-hoang-menus="data?.khaiHoangMenus ?? []"
+          :active-season-slug="activeSeasonSlug"
+        />
       </template>
     </USlideover>
 
