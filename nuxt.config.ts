@@ -3,7 +3,6 @@ const isDevelopment = import.meta.dev
 const routeRules = isDevelopment
   ? {}
   : {
-      '/': { swr: 30 },
       '/api/season-guide': { swr: 30 },
       '/api/season-guide/*': { swr: 30 }
     }
