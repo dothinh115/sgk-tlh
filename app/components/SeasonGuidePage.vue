@@ -5,6 +5,7 @@ import { teamId } from '../utils/season-guide'
 const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
+const requestUrl = useRequestURL()
 const toast = useToast()
 const selectedTeam = ref<SeasonTeam | null>(null)
 const detailOpen = ref(false)
@@ -27,6 +28,44 @@ const settings = computed(() => data.value?.settings)
 const isUpdating = computed(() => settings.value?.updating ?? false)
 const seasons = computed(() => data.value?.seasons ?? [])
 const activeSeasonSlug = computed(() => routeSeason.value || data.value?.activeSeasonSlug || seasons.value[0]?.slug || '')
+const activeSeason = computed(() => seasons.value.find(season => season.slug === activeSeasonSlug.value))
+const seasonName = computed(() => activeSeason.value?.name || 'Anh Hùng Mệnh Thế')
+const seasonTitle = computed(() => activeSeason.value?.title || `Sách giáo khoa đội hình ${seasonName.value}`)
+const routeSelectedTeam = computed(() => routeTeam.value
+  ? teams.value.find(team => teamId(team) === routeTeam.value) || null
+  : null)
+const seoTeam = computed(() => routeSelectedTeam.value || selectedTeam.value)
+const pageTitle = computed(() => {
+  if (seoTeam.value) {
+    const tier = seoTeam.value.tier ? ` ${seoTeam.value.tier}` : ''
+
+    return `${seoTeam.value.name}${tier} | ${seasonName.value} | Thăng Long Hội`
+  }
+
+  return `${seasonTitle.value} | Thăng Long Hội`
+})
+const pageDescription = computed(() => {
+  if (isUpdating.value) {
+    return settings.value?.updatingMessage || 'Thăng Long Hội đang cập nhật dữ liệu đội hình.'
+  }
+
+  if (seoTeam.value) {
+    const team = seoTeam.value
+    const generals = team.lineup.map(row => row.general).filter(Boolean).slice(0, 3).join(' · ')
+    const labels = [
+      team.tier ? `Tier ${team.tier}` : '',
+      team.factions.length ? team.factions.join('/') : '',
+      team.troopTypes.length ? team.troopTypes.join('/') : '',
+      team.tags.length ? team.tags.join(', ') : ''
+    ].filter(Boolean).join(' · ')
+    const detail = [generals, labels].filter(Boolean).join('. ')
+
+    return truncateMeta(`${team.name}: ${detail}. Xem tướng, chiến pháp, binh thư, cộng điểm, phân tích, phản biện và ghi chú.`)
+  }
+
+  return truncateMeta(`Danh sách ${teams.value.length || ''} đội hình mùa ${seasonName.value}: tướng, chiến pháp, binh thư, cộng điểm, bái sư, phân tích và ghi chú.`)
+})
+const canonicalUrl = computed(() => new URL(route.path, requestUrl.origin).toString())
 
 const updatedAt = computed(() => {
   if (!data.value?.updatedAt) {
@@ -39,6 +78,23 @@ const updatedAt = computed(() => {
     timeZone: 'Asia/Ho_Chi_Minh'
   }).format(new Date(data.value.updatedAt))
 })
+
+useSeoMeta({
+  title: () => pageTitle.value,
+  description: () => pageDescription.value,
+  ogTitle: () => pageTitle.value,
+  ogDescription: () => pageDescription.value,
+  ogUrl: () => canonicalUrl.value,
+  twitterTitle: () => pageTitle.value,
+  twitterDescription: () => pageDescription.value,
+  twitterCard: 'summary_large_image'
+})
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value }
+  ]
+}))
 
 function openTeam(team: SeasonTeam) {
   syncTeamPath(team)
@@ -119,6 +175,12 @@ watch(detailOpen, (open) => {
 
 function paramValue(value: unknown): string {
   return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
+}
+
+function truncateMeta(value: string) {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+
+  return normalized.length > 180 ? `${normalized.slice(0, 177).trim()}...` : normalized
 }
 </script>
 

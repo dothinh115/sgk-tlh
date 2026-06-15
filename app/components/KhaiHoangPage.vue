@@ -2,6 +2,7 @@
 import type { KhaiHoangChamSuRow, KhaiHoangDoiHinhRow, KhaiHoangMenu, KhaiHoangPayload } from '../../shared/types/season-guide'
 
 const route = useRoute()
+const requestUrl = useRequestURL()
 const activeKind = computed(() => paramValue(route.params.kind) || 'doi-hinh')
 const search = ref('')
 
@@ -44,6 +45,32 @@ const visibleItems = computed(() => {
 })
 const isChamSu = computed(() => activeKind.value === 'cham-su')
 const title = computed(() => data.value?.menu?.name || (isChamSu.value ? 'Chạm sứ' : 'Đội hình khai hoang'))
+const pageTitle = computed(() => `${title.value} khai hoang | Thăng Long Hội`)
+const pageDescription = computed(() => {
+  if (isChamSu.value) {
+    return truncateMeta(`Danh sách ${items.value.length || ''} đội chạm sứ: võ tướng, chiến pháp và ghi chú chuyển khai hoang cho Tam Quốc Chí Chiến Lược.`)
+  }
+
+  return truncateMeta(`Danh sách ${items.value.length || ''} đội khai hoang: võ tướng, chiến pháp trước cấp 20, sau cấp 20, chuyển hình và ghi chú.`)
+})
+const canonicalUrl = computed(() => new URL(route.path, requestUrl.origin).toString())
+
+useSeoMeta({
+  title: () => pageTitle.value,
+  description: () => pageDescription.value,
+  ogTitle: () => pageTitle.value,
+  ogDescription: () => pageDescription.value,
+  ogUrl: () => canonicalUrl.value,
+  twitterTitle: () => pageTitle.value,
+  twitterDescription: () => pageDescription.value,
+  twitterCard: 'summary_large_image'
+})
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value }
+  ]
+}))
 
 function doiHinhRows(lineup: KhaiHoangPayload['items'][number]['lineup']) {
   return lineup as KhaiHoangDoiHinhRow[]
@@ -69,6 +96,12 @@ function normalizeSearch(value: string) {
     .replace(/đ/g, 'd')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
+}
+
+function truncateMeta(value: string) {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+
+  return normalized.length > 180 ? `${normalized.slice(0, 177).trim()}...` : normalized
 }
 </script>
 

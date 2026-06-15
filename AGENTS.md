@@ -6,6 +6,7 @@
 - Local dev server normally runs at `http://127.0.0.1:4321/`.
 - Production deploy uses PM2 app `sgk-tlh` on port `3006`.
 - The production domain is `mua18.thanglonghoi.xyz`.
+- Shareable routes set their own SEO metadata. Home, season list, team detail, and khai hoang pages each define route-specific title, description, canonical URL, Open Graph, and Twitter metadata.
 
 ## Data
 - The guide data is loaded through `server/api/season-guide.get.ts`.

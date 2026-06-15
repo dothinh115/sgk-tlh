@@ -2,6 +2,11 @@
 import type { SeasonGuideMetaPayload } from '../../shared/types/season-guide'
 
 const config = useRuntimeConfig()
+const route = useRoute()
+const requestUrl = useRequestURL()
+const title = 'Thăng Long Hội | Sách giáo khoa Tam Quốc Chí Chiến Lược'
+const description = 'Trang tổng hợp sách giáo khoa Tam Quốc Chí Chiến Lược: mùa giải Anh Hùng Mệnh Thế, khai hoang đội hình và chạm sứ.'
+const canonicalUrl = computed(() => new URL(route.path, requestUrl.origin).toString())
 
 const { data } = await useApiData<SeasonGuideMetaPayload>(config.public.seasonApiBase, {
   key: 'season-guide-meta-shell',
@@ -10,6 +15,23 @@ const { data } = await useApiData<SeasonGuideMetaPayload>(config.public.seasonAp
 
 const seasons = computed(() => data.value?.seasons ?? [])
 const khaiHoangMenus = computed(() => data.value?.khaiHoangMenus ?? [])
+
+useSeoMeta({
+  title,
+  description,
+  ogTitle: title,
+  ogDescription: description,
+  ogUrl: () => canonicalUrl.value,
+  twitterTitle: title,
+  twitterDescription: description,
+  twitterCard: 'summary_large_image'
+})
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value }
+  ]
+}))
 </script>
 
 <template>
