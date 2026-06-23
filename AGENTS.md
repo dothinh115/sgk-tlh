@@ -31,7 +31,7 @@
 ## Team List
 - Team rows use `div role="button"` instead of `<button>` because each row contains a real share `UButton`; nested buttons break browser DOM layout.
 - Season detail routes use `/seasons/:season/:team?` through `app/pages/seasons/[season]/[[team]].vue`. The page key is the season slug, so changing only the team param opens the drawer without remounting the team list or resetting search/filter state.
-- Deep-linked team routes initialize the drawer open immediately. `TeamDetailDrawer` is a fixed SSR-rendered drawer shell and renders selected team content through `TeamDetailContent`, so direct links do not wait for a client-only slideover handoff; initial direct links and later open/close interactions use the drawer's Vue transition.
+- Deep-linked team routes initialize the detail drawer open immediately. `TeamDetailDrawer` uses Nuxt UI `UDrawer` with `direction="right"`, `portal=false`, `default-open` from route state, and z-index overrides above the app header while keeping Nuxt UI's built-in drawer transition.
 - Opening a team detail from the list uses router push so browser Back returns to the list. Closing the drawer uses router replace so Back does not reopen the closed detail.
 - Team list rows should stay compact: rank, team name, tier, three general names, and share action. Detailed tactics, battle books, attributes, mentor, and notes belong in the drawer.
 - Team country, troop, and tag badges come only from `factions`, `troopTypes`, and `tags`; country and troop colors are fixed in `app/utils/team-badges.ts` and must not follow the page primary color.

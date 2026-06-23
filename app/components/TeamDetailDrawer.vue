@@ -19,21 +19,23 @@ function closeDrawer() {
 </script>
 
 <template>
-  <Transition
-    name="team-detail-drawer"
-    appear
+  <UDrawer
+    v-model:open="open"
+    :default-open="open"
+    :portal="false"
+    direction="right"
+    :handle="false"
+    inset
+    :title="team?.name || (loading ? 'Đang tải đội hình' : 'Không tìm thấy đội hình')"
+    :description="team?.tier || ''"
+    :ui="{
+      overlay: '!z-[60]',
+      content: '!z-[61] !inset-3 !h-auto !w-auto !max-w-none !rounded-xl !overflow-hidden sm:!inset-y-4 sm:!right-4 sm:!left-auto sm:!w-[min(860px,calc(100vw-2rem))]',
+      container: '!gap-0 !p-0 !overflow-hidden'
+    }"
   >
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 bg-elevated/75"
-      @click.self="closeDrawer"
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        :aria-label="team?.name || (loading ? 'Đang tải đội hình' : 'Không tìm thấy đội hình')"
-        class="absolute inset-3 flex flex-col overflow-hidden rounded-xl bg-default shadow-xl ring ring-default sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[min(860px,calc(100vw-2rem))]"
-      >
+    <template #content>
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-default">
         <header class="relative border-b border-default px-5 py-4 pr-16 sm:px-6 sm:pr-16">
           <h2 class="text-base font-semibold text-highlighted">
             {{ team?.name || (loading ? 'Đang tải đội hình' : 'Không tìm thấy đội hình') }}
@@ -81,30 +83,7 @@ function closeDrawer() {
             </div>
           </div>
         </div>
-      </section>
-    </div>
-  </Transition>
+      </div>
+    </template>
+  </UDrawer>
 </template>
-
-<style scoped>
-.team-detail-drawer-enter-active,
-.team-detail-drawer-leave-active {
-  transition: opacity 180ms ease;
-}
-
-.team-detail-drawer-enter-active [role="dialog"],
-.team-detail-drawer-leave-active [role="dialog"] {
-  transition: transform 220ms ease, opacity 220ms ease;
-}
-
-.team-detail-drawer-enter-from,
-.team-detail-drawer-leave-to {
-  opacity: 0;
-}
-
-.team-detail-drawer-enter-from [role="dialog"],
-.team-detail-drawer-leave-to [role="dialog"] {
-  opacity: 0;
-  transform: translateX(24px);
-}
-</style>
