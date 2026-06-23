@@ -12,6 +12,7 @@ const routeSeason = computed(() => paramValue(route.params.season))
 const routeTeam = computed(() => paramValue(route.params.team))
 const detailOpen = ref(Boolean(routeTeam.value))
 const hydrated = ref(false)
+const initialTeamRoute = ref(Boolean(routeTeam.value))
 let copiedResetTimer: ReturnType<typeof setTimeout> | undefined
 
 const seasonGuideKey = computed(() => `season-guide:${routeSeason.value || 'default'}`)
@@ -36,7 +37,8 @@ const routeSelectedTeam = computed(() => routeTeam.value
   : null)
 const selectedTeam = computed(() => routeSelectedTeam.value)
 const detailLoading = computed(() => Boolean(routeTeam.value && !selectedTeam.value && status.value === 'pending' && !error.value && !isUpdating.value))
-const showInitialDetailFallback = computed(() => Boolean(routeTeam.value && !hydrated.value && !isUpdating.value))
+const showInitialDetailFallback = computed(() => Boolean(routeTeam.value && selectedTeam.value && !hydrated.value && !isUpdating.value))
+const instantDetailOpen = computed(() => Boolean(initialTeamRoute.value && routeTeam.value))
 const seoTeam = computed(() => selectedTeam.value)
 const pageTitle = computed(() => {
   if (seoTeam.value) {
@@ -100,7 +102,9 @@ useHead(() => ({
 }))
 
 onMounted(() => {
-  hydrated.value = true
+  window.requestAnimationFrame(() => {
+    hydrated.value = true
+  })
 })
 
 function openTeam(team: SeasonTeam) {
@@ -250,6 +254,7 @@ function truncateMeta(value: string) {
       v-model:open="detailOpen"
       :team="selectedTeam"
       :loading="detailLoading"
+      :instant="instantDetailOpen"
       :copied-team-id="copiedTeamId"
       @share-team="shareTeam"
     />
@@ -258,23 +263,22 @@ function truncateMeta(value: string) {
       v-if="showInitialDetailFallback"
       class="fixed inset-0 z-[60] bg-elevated/75"
     >
-      <div class="absolute inset-3 overflow-hidden rounded-xl bg-default shadow-xl sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[min(860px,calc(100vw-2rem))]">
-        <div class="border-b border-default px-5 py-4 sm:px-6">
+      <div class="absolute inset-3 flex flex-col overflow-hidden rounded-xl bg-default shadow-xl sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[min(860px,calc(100vw-2rem))]">
+        <div class="border-b border-default px-5 py-4 pr-16 sm:px-6 sm:pr-16">
+          <h2 class="text-base font-semibold text-highlighted">
+            {{ selectedTeam?.name }}
+          </h2>
           <p class="text-sm text-muted">
             {{ selectedTeam?.tier || '' }}
           </p>
-          <h2 class="text-lg font-semibold text-highlighted">
-            {{ selectedTeam?.name || 'Đang tải đội hình' }}
-          </h2>
         </div>
-        <div class="flex min-h-[320px] flex-col items-center justify-center gap-3 p-8 text-center">
-          <UIcon
-            name="i-lucide-loader-circle"
-            class="size-8 animate-spin text-muted"
+        <div class="min-h-0 flex-1 overflow-y-auto">
+          <TeamDetailContent
+            v-if="selectedTeam"
+            :team="selectedTeam"
+            :copied-team-id="copiedTeamId"
+            @share-team="shareTeam"
           />
-          <p class="max-w-sm text-sm text-muted">
-            Đang mở chi tiết đội hình.
-          </p>
         </div>
       </div>
     </div>
