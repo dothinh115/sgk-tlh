@@ -7,17 +7,17 @@ const route = useRoute()
 const router = useRouter()
 const requestUrl = useRequestURL()
 const toast = useToast()
-const selectedTeam = ref<SeasonTeam | null>(null)
-const detailOpen = ref(false)
 const copiedTeamId = ref('')
 const routeSeason = computed(() => paramValue(route.params.season))
 const routeTeam = computed(() => paramValue(route.params.team))
+const detailOpen = ref(Boolean(routeTeam.value))
+const hydrated = ref(false)
 let copiedResetTimer: ReturnType<typeof setTimeout> | undefined
 
 const seasonGuideKey = computed(() => `season-guide:${routeSeason.value || 'default'}`)
 const seasonGuideQuery = computed(() => routeSeason.value ? { season: routeSeason.value } : undefined)
 
-const { data, error } = await useApiData<SeasonGuidePayload>(config.public.seasonApiBase, {
+const { data, error, status } = await useApiData<SeasonGuidePayload>(config.public.seasonApiBase, {
   key: seasonGuideKey,
   query: seasonGuideQuery,
   watch: [routeSeason]
@@ -34,7 +34,10 @@ const seasonTitle = computed(() => activeSeason.value?.title || `Sách giáo kho
 const routeSelectedTeam = computed(() => routeTeam.value
   ? teams.value.find(team => teamId(team) === routeTeam.value) || null
   : null)
-const seoTeam = computed(() => routeSelectedTeam.value || selectedTeam.value)
+const selectedTeam = computed(() => routeSelectedTeam.value)
+const detailLoading = computed(() => Boolean(routeTeam.value && !selectedTeam.value && status.value === 'pending' && !error.value && !isUpdating.value))
+const showInitialDetailFallback = computed(() => Boolean(routeTeam.value && !hydrated.value && !isUpdating.value))
+const seoTeam = computed(() => selectedTeam.value)
 const pageTitle = computed(() => {
   if (seoTeam.value) {
     const tier = seoTeam.value.tier ? ` ${seoTeam.value.tier}` : ''
@@ -96,6 +99,10 @@ useHead(() => ({
   ]
 }))
 
+onMounted(() => {
+  hydrated.value = true
+})
+
 function openTeam(team: SeasonTeam) {
   syncTeamPath(team)
 }
@@ -105,7 +112,6 @@ function syncTeamPath(team: SeasonTeam) {
   const nextSeason = activeSeasonSlug.value
 
   if (routeTeam.value === nextTeam && routeSeason.value === nextSeason) {
-    selectedTeam.value = team
     detailOpen.value = true
     return
   }
@@ -145,26 +151,13 @@ function buildTeamUrl(team: SeasonTeam) {
   return `${window.location.origin}/seasons/${activeSeasonSlug.value}/${teamId(team)}`
 }
 
-watch([teams, routeTeam], ([currentTeams, currentTeam]) => {
+watch(routeTeam, (currentTeam) => {
   if (!currentTeam) {
-    selectedTeam.value = null
     detailOpen.value = false
     return
   }
 
-  if (!currentTeams.length) {
-    return
-  }
-
-  const match = currentTeams.find(team => teamId(team) === currentTeam)
-
-  if (match && (!selectedTeam.value || teamId(selectedTeam.value) !== teamId(match))) {
-    selectedTeam.value = match
-  }
-
-  if (match && !detailOpen.value) {
-    detailOpen.value = true
-  }
+  detailOpen.value = true
 }, { immediate: true })
 
 watch(detailOpen, (open) => {
@@ -256,8 +249,34 @@ function truncateMeta(value: string) {
     <TeamDetailDrawer
       v-model:open="detailOpen"
       :team="selectedTeam"
+      :loading="detailLoading"
       :copied-team-id="copiedTeamId"
       @share-team="shareTeam"
     />
+
+    <div
+      v-if="showInitialDetailFallback"
+      class="fixed inset-0 z-[60] bg-elevated/75"
+    >
+      <div class="absolute inset-3 overflow-hidden rounded-xl bg-default shadow-xl sm:inset-y-4 sm:right-4 sm:left-auto sm:w-[min(860px,calc(100vw-2rem))]">
+        <div class="border-b border-default px-5 py-4 sm:px-6">
+          <p class="text-sm text-muted">
+            {{ selectedTeam?.tier || '' }}
+          </p>
+          <h2 class="text-lg font-semibold text-highlighted">
+            {{ selectedTeam?.name || 'Đang tải đội hình' }}
+          </h2>
+        </div>
+        <div class="flex min-h-[320px] flex-col items-center justify-center gap-3 p-8 text-center">
+          <UIcon
+            name="i-lucide-loader-circle"
+            class="size-8 animate-spin text-muted"
+          />
+          <p class="max-w-sm text-sm text-muted">
+            Đang mở chi tiết đội hình.
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
