@@ -107,39 +107,43 @@ jobs:
             "$PM2_PATH" save
 
             if command -v nginx >/dev/null 2>&1; then
-              {
-                printf '%s\n' 'server {'
-                printf '%s\n' '  listen 80;'
-                printf '%s\n' '  listen [::]:80;'
-                printf '%s\n' '  server_name mua18.thanglonghoi.xyz;'
-                printf '%s\n' ''
-                printf '%s\n' '  location / {'
-                printf '%s\n' '    proxy_pass http://127.0.0.1:3006;'
-                printf '%s\n' '    proxy_http_version 1.1;'
-                printf '%s\n' '    proxy_set_header Upgrade $http_upgrade;'
-                printf '%s\n' '    proxy_set_header Connection "upgrade";'
-                printf '%s\n' '    proxy_set_header Host $host;'
-                printf '%s\n' '    proxy_set_header X-Real-IP $remote_addr;'
-                printf '%s\n' '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
-                printf '%s\n' '    proxy_set_header X-Forwarded-Proto $scheme;'
-                printf '%s\n' '  }'
-                printf '%s\n' '}'
-              } > /etc/nginx/sites-available/sgk-tlh
-              ln -sf /etc/nginx/sites-available/sgk-tlh /etc/nginx/sites-enabled/sgk-tlh
-              nginx -t
-              systemctl reload nginx
+              if nginx -t; then
+                {
+                  printf '%s\n' 'server {'
+                  printf '%s\n' '  listen 80;'
+                  printf '%s\n' '  listen [::]:80;'
+                  printf '%s\n' '  server_name mua18.thanglonghoi.xyz;'
+                  printf '%s\n' ''
+                  printf '%s\n' '  location / {'
+                  printf '%s\n' '    proxy_pass http://127.0.0.1:3006;'
+                  printf '%s\n' '    proxy_http_version 1.1;'
+                  printf '%s\n' '    proxy_set_header Upgrade $http_upgrade;'
+                  printf '%s\n' '    proxy_set_header Connection "upgrade";'
+                  printf '%s\n' '    proxy_set_header Host $host;'
+                  printf '%s\n' '    proxy_set_header X-Real-IP $remote_addr;'
+                  printf '%s\n' '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
+                  printf '%s\n' '    proxy_set_header X-Forwarded-Proto $scheme;'
+                  printf '%s\n' '  }'
+                  printf '%s\n' '}'
+                } > /etc/nginx/sites-available/sgk-tlh
+                ln -sf /etc/nginx/sites-available/sgk-tlh /etc/nginx/sites-enabled/sgk-tlh
+                nginx -t
+                systemctl reload nginx
 
-              if ! command -v certbot >/dev/null 2>&1; then
-                apt-get update
-                DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
+                if ! command -v certbot >/dev/null 2>&1; then
+                  apt-get update
+                  DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
+                fi
+
+                certbot --nginx \
+                  --non-interactive \
+                  --agree-tos \
+                  --redirect \
+                  --email "$CERT_EMAIL" \
+                  -d "$APP_DOMAIN"
+              else
+                echo "Existing nginx configuration is invalid; skipping nginx and certbot setup for this app deploy."
               fi
-
-              certbot --nginx \
-                --non-interactive \
-                --agree-tos \
-                --redirect \
-                --email "$CERT_EMAIL" \
-                -d "$APP_DOMAIN"
             fi
 
             sleep 5

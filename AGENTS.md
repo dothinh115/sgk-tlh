@@ -42,3 +42,4 @@
 - GitHub Actions deploys from `main` using `.github/workflows/deploy.yml`.
 - Required repository secrets are `VPS_HOST`, `VPS_USER`, and `SSH_PRIVATE_KEY`.
 - The deploy workflow syncs source to `/apps/sgk-tlh`, builds with `yarn`, restarts PM2, configures nginx, and requests HTTPS with certbot when DNS resolves to the VPS.
+- If the VPS has an unrelated invalid nginx configuration, the deploy workflow skips nginx/certbot setup for this app deploy and still verifies the PM2 process plus local app health.
